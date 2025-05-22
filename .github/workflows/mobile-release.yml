@@ -7,7 +7,7 @@ permissions:
 
 env:
   PROJECT_NAME: PsychEngine
-  REPO_PATH: MobilePorting/FNF-PsychEngine-Mobile
+  REPO_PATH: noctrox389/PsychEngine-Mobile
 
 jobs:
   get-commit-hash:
