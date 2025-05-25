@@ -63,9 +63,6 @@ jobs:
         id: get_version
         run: |
           # Replace this with how you extract your app version (e.g., from package.json, info.plist, AndroidManifest.xml)
-          # For example, if you have a version in a file named `VERSION`
-          # app_version=$(cat VERSION)
-          # Or if it's in a package.json (requires jq to be installed in the runner image, or add a setup-node step)
           # Example for package.json:
           app_version=$(jq -r '.version' package.json 2>/dev/null) || app_version="0.0.0" # Fallback if not found or jq not available
           echo "Detected App Version: $app_version"
@@ -76,7 +73,7 @@ jobs:
   build:
     name: Build ${{ matrix.name }}
     needs: get-commit-info
-    if: (!github.event.inputs.skip_ios && matrix.name == 'iOS') || (!github.event.inputs.skip_android && matrix.name == 'Android')
+    # Removed the 'if' condition from here
     strategy:
       fail-fast: false # Allow other builds to continue even if one fails
       matrix:
@@ -87,14 +84,16 @@ jobs:
             setupCommand: sh ./setup/mobile.sh
             artifactName: android-build
             artifactPath: "export/release/android/bin/app/build/outputs/apk/release/*.apk"
-            outputFileName: "WashosEngine-Android.apk" # <-- CORRECTED: Directly use the project name
+            outputFileName: "WashosEngine-Android.apk" # Corrected
+            skip: ${{ github.event.inputs.skip_android }} # <-- NEW: Pass skip flag to matrix
           - name: iOS
             os: macos-15 # Consider macos-latest
             setupCommand: sh ./setup/mobile.sh
             buildArgs: "ios -final -nosign -D officialBuild"
             artifactName: ios-build
             artifactPath: "export/release/ios/build/Release-iphoneos/*.ipa"
-            outputFileName: "WashosEngine-iOS.ipa" # <-- CORRECTED: Directly use the project name
+            outputFileName: "WashosEngine-iOS.ipa" # Corrected
+            skip: ${{ github.event.inputs.skip_ios }} # <-- NEW: Pass skip flag to matrix
     uses: ./.github/workflows/build.yml
     with:
         name: ${{ matrix.name }}
@@ -103,8 +102,8 @@ jobs:
         buildArgs: ${{ matrix.buildArgs }}
         artifactName: ${{ matrix.artifactName }}
         artifactPath: ${{ matrix.artifactPath }}
-        # If your reusable workflow needs the outputFileName as an input, uncomment this:
-        # outputFileName: ${{ matrix.outputFileName }}
+        # Pass the new 'skip' input to the reusable workflow
+        skip_build: ${{ matrix.skip }} # <-- NEW: Pass this to the reusable workflow
 
   # --- Step 3: Package and Release to GitHub ---
   github-releaser:
@@ -121,6 +120,7 @@ jobs:
         run: mkdir -p ${{ env.ARTIFACTS_DIR }}
 
       - name: Download Android Build Artifact
+        # Conditional download based on the input that would have skipped the build
         if: success() && !github.event.inputs.skip_android
         uses: actions/download-artifact@v4
         with:
@@ -130,7 +130,7 @@ jobs:
       - name: Rename Android APK for Release
         if: success() && !github.event.inputs.skip_android
         run: |
-          apk_file=$(find ${{ env.ARTIFACTS_DIR }}/android-raw -name "*.apk" -print -quit) # Use -print -quit to get only the first match
+          apk_file=$(find ${{ env.ARTIFACTS_DIR }}/android-raw -name "*.apk" -print -quit)
           if [ -f "$apk_file" ]; then
             mv "$apk_file" "${{ env.ARTIFACTS_DIR }}/${{ env.PROJECT_NAME }}-Android.apk"
             echo "Android APK renamed to: ${{ env.ARTIFACTS_DIR }}/${{ env.PROJECT_NAME }}-Android.apk"
@@ -140,6 +140,7 @@ jobs:
           fi
 
       - name: Download iOS Build Artifact
+        # Conditional download based on the input that would have skipped the build
         if: success() && !github.event.inputs.skip_ios
         uses: actions/download-artifact@v4
         with:
@@ -149,7 +150,7 @@ jobs:
       - name: Zip iOS Build For Release
         if: success() && !github.event.inputs.skip_ios
         run: |
-          ipa_file=$(find ${{ env.ARTIFACTS_DIR }}/ios-raw -name "*.ipa" -print -quit) # Use -print -quit
+          ipa_file=$(find ${{ env.ARTIFACTS_DIR }}/ios-raw -name "*.ipa" -print -quit)
           if [ -f "$ipa_file" ]; then
             zip -j "${{ env.ARTIFACTS_DIR }}/${{ env.PROJECT_NAME }}-iOS.zip" "$ipa_file"
             echo "iOS IPA zipped to: ${{ env.ARTIFACTS_DIR }}/${{ env.PROJECT_NAME }}-iOS.zip"
@@ -169,13 +170,9 @@ jobs:
           RELEASE_BODY+="\n**Commit SHA:** `${{ needs.get-commit-info.outputs.commit_sha_full }}`"
           RELEASE_BODY+="\n\n---"
           RELEASE_BODY+="\n_Generated automatically by GitHub Actions._"
-          # The `run` command will correctly set output for multiline strings
-          # We need to escape newlines for `set-output` directly in older GitHub Actions
-          # but recent versions handle it better. For maximum compatibility:
           echo "::set-output name=body<<EOF"
           echo -e "$RELEASE_BODY"
           echo "EOF"
-
 
       - name: Publish The GitHub Release
         uses: softprops/action-gh-release@v2
@@ -188,17 +185,16 @@ jobs:
             ${{ env.ARTIFACTS_DIR }}/*.apk
             ${{ env.ARTIFACTS_DIR }}/*.zip
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # GITHUB_TOKEN is automatically provided
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # --- Step 4 (Optional): Deploy to App Stores ---
   deploy-to-stores:
     name: Deploy to App Stores
-    needs: [github-releaser] # Depends on the GitHub release being successful
-    if: success() && github.event.inputs.upload_to_stores && (needs.build.result == 'success' || needs.build.result == 'skipped') # Only run if requested and builds succeeded
+    needs: [github-releaser]
+    if: success() && github.event.inputs.upload_to_stores && (needs.build.result == 'success' || needs.build.result == 'skipped')
     runs-on: ubuntu-latest
     permissions:
-      contents: read # Only needs read permission to download artifacts
-      # Add necessary permissions for specific store actions (e.g., secrets for API keys)
+      contents: read
 
     steps:
       - name: Create Deploy Directory
@@ -208,36 +204,32 @@ jobs:
         if: success() && !github.event.inputs.skip_android
         uses: actions/download-artifact@v4
         with:
-          name: android-build # Download the original artifact name
+          name: android-build
           path: ./deploy_artifacts/android
 
       - name: Download iOS Artifact for Deployment
         if: success() && !github.event.inputs.skip_ios
         uses: actions/download-artifact@v4
         with:
-          name: ios-build # Download the original artifact name
+          name: ios-build
           path: ./deploy_artifacts/ios
 
-      # Example: Deploy to Google Play Store (requires separate actions and secrets)
+      # Example: Deploy to Google Play Store
       - name: Deploy Android to Google Play
         if: success() && !github.event.inputs.skip_android
-        uses: r0adkll/upload-google-play@v1 # Example action
+        uses: r0adkll/upload-google-play@v1
         with:
-          # Your Google Play service account key (store as a GitHub Secret)
           serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_KEY }}
           packageName: com.yourcompany.yourapp
-          releaseFiles: ./deploy_artifacts/android/*.apk # Use the downloaded raw artifact
-          track: ${{ github.event.inputs.release_type == 'production' && 'production' || 'internal' }} # Dynamic track
-          # Add other parameters like status, mappingFile, etc.
+          releaseFiles: ./deploy_artifacts/android/*.apk
+          track: ${{ github.event.inputs.release_type == 'production' && 'production' || 'internal' }}
 
-      # Example: Deploy to Apple App Store / TestFlight (requires separate actions and secrets)
+      # Example: Deploy to Apple App Store / TestFlight
       - name: Deploy iOS to App Store Connect / TestFlight
         if: success() && !github.event.inputs.skip_ios
-        uses: actions/upload-to-app-store@v1 # Example action
+        uses: actions/upload-to-app-store@v1
         with:
-          # Your Apple Developer credentials (store as GitHub Secrets)
           api-key-id: ${{ secrets.APP_STORE_API_KEY_ID }}
           api-private-key: ${{ secrets.APP_STORE_PRIVATE_KEY }}
           issuer-id: ${{ secrets.APP_STORE_ISSUER_ID }}
-          app-path: ./deploy_artifacts/ios/*.ipa # Use the downloaded raw artifact
-          # Add other parameters like build-number, skip-waiting-for-build-processing, etc.
+          app-path: ./deploy_artifacts/ios/*.ipa
