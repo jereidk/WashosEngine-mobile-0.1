@@ -1,4 +1,4 @@
-name: Build
+name: Reusable Mobile Build
 
 on:
   workflow_call:
@@ -21,34 +21,46 @@ on:
       artifactPath:
         required: true
         type: string
+      skip_build: # <-- NEW: Input for skipping the build
+        required: false
+        type: boolean
+        default: false
 
 env:
   HAXE_VERSION: 4.3.6
-  PROJECT_NAME: PsychEngine
+  PROJECT_NAME: PsychEngine # This should ideally match the PROJECT_NAME in your main workflow
 
 jobs:
   build:
-    name: Build
+    name: Build ${{ inputs.name }} # Dynamic name for the job
     runs-on: ${{ inputs.os }}
     steps:
+      - name: Check if build should be skipped
+        # This step uses the new skip_build input to conditionally exit the job.
+        # If skip_build is true, it logs a message and exits successfully.
+        if: ${{ inputs.skip_build }}
+        run: |
+          echo "Skipping ${{ inputs.name }} build as requested by the caller workflow."
+          exit 0 # Exit with success code so dependent jobs (like releaser) don't fail unnecessarily
+
       - name: Checkout
-        uses: actions/checkout@main
+        uses: actions/checkout@v4 # Always pin to a specific version for stability (e.g., v4)
 
       - name: Setup Haxe
-        uses: krdlab/setup-haxe@master
+        uses: krdlab/setup-haxe@v1 # Pin to a specific version if available, or a commit hash
         with:
           haxe-version: ${{ env.HAXE_VERSION }}
 
       - name: Setup Android NDK
         if: inputs.name == 'Android'
-        uses: nttld/setup-ndk@main
+        uses: nttld/setup-ndk@v1 # Pin to a specific version for stability (e.g., v1)
         id: ndk
         with:
           ndk-version: r28
 
-      - name: Install libVLC
+      - name: Install libVLC (Linux)
         if: inputs.name == 'Linux'
-        run: sudo apt install libvlc-dev libvlccore-dev
+        run: sudo apt update && sudo apt install -y libvlc-dev libvlccore-dev # Add apt update for robustness
 
       - name: Install Libraries
         run: ${{ inputs.setupCommand }}
@@ -56,25 +68,52 @@ jobs:
       - name: Configure Android
         if: inputs.name == 'Android'
         run: |
+          # Use `which java` to find JAVA_HOME for robustness, especially if there are multiple JREs/JDKs
+          # Or ensure JAVA_HOME_17_arm64 is correctly set in the runner environment
+          echo "Configuring Android environment..."
           haxelib run lime config ANDROID_SDK $ANDROID_HOME
           haxelib run lime config ANDROID_NDK_ROOT ${{ steps.ndk.outputs.ndk-path }}
-          haxelib run lime config JAVA_HOME $JAVA_HOME_17_arm64
+          # Check if JAVA_HOME_17_arm64 is truly available or if you need to derive JAVA_HOME
+          # Example to get JAVA_HOME for Java 17:
+          JAVA_17_HOME=$(dirname $(dirname $(readlink -f $(which java) || which java 2>/dev/null)) | grep -E "jdk-17|java-17|jdk17|java17")
+          if [ -z "$JAVA_17_HOME" ]; then
+            echo "::warning::JAVA_17_HOME not found automatically. Using default JAVA_HOME if available."
+            JAVA_17_HOME="$JAVA_HOME" # Fallback
+          fi
+          haxelib run lime config JAVA_HOME "$JAVA_17_HOME"
           haxelib run lime config ANDROID_SETUP true
+          echo "Android configuration complete."
+
 
       - name: Compile
         run: haxelib run lime build ${{ inputs.buildArgs }}
 
-      - name: Make IPA
+      - name: Make IPA (iOS)
         if: inputs.name == 'iOS'
         run: |
-          cd export/release/ios/build/Release-iphoneos
-          mkdir Payload
-          mv *.app Payload
-          zip -r ${{ env.PROJECT_NAME }}.ipa Payload
+          echo "Packaging IPA for iOS..."
+          # Verify the directory and files exist before zipping
+          IPA_DIR="export/release/ios/build/Release-iphoneos"
+          if [ ! -d "$IPA_DIR" ]; then
+            echo "::error::iOS build directory not found: $IPA_DIR"
+            exit 1
+          fi
+          cd "$IPA_DIR"
+          
+          APP_BUNDLE=$(find . -name "*.app" -maxdepth 1 -print -quit) # Find the .app bundle
+          if [ -z "$APP_BUNDLE" ]; then
+            echo "::error::.app bundle not found in $IPA_DIR"
+            exit 1
+          fi
+          
+          mkdir -p Payload
+          mv "$APP_BUNDLE" Payload/
+          zip -r ${{ env.PROJECT_NAME }}.ipa Payload/
+          echo "IPA created: ${{ env.PROJECT_NAME }}.ipa"
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@main
+        uses: actions/upload-artifact@v4 # Pin to a specific version (e.g., v4)
         with:
           name: ${{ inputs.artifactName }}
           path: ${{ inputs.artifactPath }}
-          if-no-files-found: error
+          if-no-files-found: error # Ensures the job fails if the artifact isn't found
