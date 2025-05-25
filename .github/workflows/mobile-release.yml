@@ -64,8 +64,6 @@ jobs:
           echo "Detected App Version: $app_version"
           echo "::set-output name=APP_VERSION::$app_version"
 
-  ---
-
   build:
     name: Build ${{ matrix.name }}
     needs: get-commit-info
@@ -98,8 +96,6 @@ jobs:
         artifactName: ${{ matrix.artifactName }}
         artifactPath: ${{ matrix.artifactPath }}
         skip_build: ${{ matrix.skip }}
-
-  ---
 
   github-releaser:
     name: Create GitHub Release
