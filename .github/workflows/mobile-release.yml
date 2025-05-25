@@ -65,12 +65,12 @@ jobs:
           # Replace this with how you extract your app version (e.g., from package.json, info.plist, AndroidManifest.xml)
           # For example, if you have a version in a file named `VERSION`
           # app_version=$(cat VERSION)
-          # Or if it's in a package.json
-          app_version=$(jq -r '.version' package.json) || echo "0.0.0" # Fallback if not found
+          # Or if it's in a package.json (requires jq to be installed in the runner image, or add a setup-node step)
+          # Example for package.json:
+          app_version=$(jq -r '.version' package.json 2>/dev/null) || app_version="0.0.0" # Fallback if not found or jq not available
           echo "Detected App Version: $app_version"
           echo "::set-output name=APP_VERSION::$app_version"
-        # Only run if jq is installed (you might need a setup-node or install jq step)
-        continue-on-error: true # Allow this step to fail without stopping the workflow, but handle the default version
+        # continue-on-error: true # Keep this if you want the workflow to proceed even if version extraction fails
 
   # --- Step 2: Build Mobile Applications ---
   build:
@@ -87,14 +87,14 @@ jobs:
             setupCommand: sh ./setup/mobile.sh
             artifactName: android-build
             artifactPath: "export/release/android/bin/app/build/outputs/apk/release/*.apk"
-            outputFileName: "${{ env.PROJECT_NAME }}-Android.apk"
+            outputFileName: "WashosEngine-Android.apk" # <-- CORRECTED: Directly use the project name
           - name: iOS
             os: macos-15 # Consider macos-latest
             setupCommand: sh ./setup/mobile.sh
             buildArgs: "ios -final -nosign -D officialBuild"
             artifactName: ios-build
             artifactPath: "export/release/ios/build/Release-iphoneos/*.ipa"
-            outputFileName: "${{ env.PROJECT_NAME }}-iOS.ipa"
+            outputFileName: "WashosEngine-iOS.ipa" # <-- CORRECTED: Directly use the project name
     uses: ./.github/workflows/build.yml
     with:
         name: ${{ matrix.name }}
@@ -103,7 +103,8 @@ jobs:
         buildArgs: ${{ matrix.buildArgs }}
         artifactName: ${{ matrix.artifactName }}
         artifactPath: ${{ matrix.artifactPath }}
-        # outputFileName: ${{ matrix.outputFileName }} # Pass if reusable workflow can use it
+        # If your reusable workflow needs the outputFileName as an input, uncomment this:
+        # outputFileName: ${{ matrix.outputFileName }}
 
   # --- Step 3: Package and Release to GitHub ---
   github-releaser:
@@ -168,7 +169,12 @@ jobs:
           RELEASE_BODY+="\n**Commit SHA:** `${{ needs.get-commit-info.outputs.commit_sha_full }}`"
           RELEASE_BODY+="\n\n---"
           RELEASE_BODY+="\n_Generated automatically by GitHub Actions._"
-          echo "::set-output name=body::$RELEASE_BODY"
+          # The `run` command will correctly set output for multiline strings
+          # We need to escape newlines for `set-output` directly in older GitHub Actions
+          # but recent versions handle it better. For maximum compatibility:
+          echo "::set-output name=body<<EOF"
+          echo -e "$RELEASE_BODY"
+          echo "EOF"
 
 
       - name: Publish The GitHub Release
