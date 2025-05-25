@@ -50,7 +50,15 @@ jobs:
         if: inputs.name == 'Linux'
         run: sudo apt install libvlc-dev libvlccore-dev
 
-      - name: Install Libraries
+      - name: Install Haxe Dependencies
+        run: |
+          haxelib install lime --quiet
+          haxelib install openfl --quiet
+          haxelib install flixel --quiet
+          haxelib install hxcpp --quiet
+          haxelib run lime setup -y
+
+      - name: Run Custom Setup Script
         run: ${{ inputs.setupCommand }}
 
       - name: Configure Android
