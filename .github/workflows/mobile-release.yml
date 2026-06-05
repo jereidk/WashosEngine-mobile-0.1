@@ -57,10 +57,9 @@ jobs:
           echo "=== Starting Haxe Dependencies Installation ==="
           haxelib setup ~/haxelib || true
           
-          # First, install lime directly from haxelib (most important!)
+          # Install lime directly from haxelib (most important!)
           echo "Installing lime..."
           haxelib install lime 8.2.0 || haxelib install lime || true
-          haxelib run lime setup -y || true
           
           # Verify lime is installed
           echo "Verifying lime..."
@@ -81,7 +80,6 @@ jobs:
           # Git-based installations (try these after regular install)
           echo "Installing git-based libraries..."
           haxelib git hxcpp https://github.com/mcagabe19-stuff/hxcpp --quiet || true
-          haxelib git lime https://github.com/mcagabe19-stuff/lime --quiet || true
           haxelib git flixel https://github.com/MobilePorting/flixel 5.6.1 --quiet || true
           haxelib git flxanimate https://github.com/Dot-Stuff/flxanimate --quiet || true
           haxelib git linc_luajit https://github.com/MobilePorting/linc_luajit-0.7plus --quiet || true
@@ -97,6 +95,7 @@ jobs:
       - name: Verify Lime
         run: |
           echo "=== Verifying Lime ==="
+          haxelib list | grep lime || echo "Lime not found"
           haxelib run lime version || echo "Lime check completed"
 
       - name: Configure Android
@@ -138,10 +137,9 @@ jobs:
           echo "=== Starting Haxe Dependencies Installation ==="
           haxelib setup ~/haxelib || true
           
-          # First, install lime directly from haxelib (most important!)
+          # Install lime directly from haxelib (most important!)
           echo "Installing lime..."
           haxelib install lime 8.2.0 || haxelib install lime || true
-          haxelib run lime setup -y || true
           
           # Verify lime is installed
           echo "Verifying lime..."
@@ -161,7 +159,6 @@ jobs:
           # Git-based installations (try these after regular install)
           echo "Installing git-based libraries..."
           haxelib git hxcpp https://github.com/mcagabe19-stuff/hxcpp --quiet || true
-          haxelib git lime https://github.com/mcagabe19-stuff/lime --quiet || true
           haxelib git flixel https://github.com/MobilePorting/flixel 5.6.1 --quiet || true
           haxelib git flxanimate https://github.com/Dot-Stuff/flxanimate --quiet || true
           haxelib git linc_luajit https://github.com/MobilePorting/linc_luajit-0.7plus --quiet || true
@@ -177,6 +174,7 @@ jobs:
       - name: Verify Lime
         run: |
           echo "=== Verifying Lime ==="
+          haxelib list | grep lime || echo "Lime not found"
           haxelib run lime version || echo "Lime check completed"
 
       - name: Build iOS
