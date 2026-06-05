@@ -23,17 +23,12 @@ import sys.io.File;
  * LuaBridge - Perfect integration layer for Lua-Haxe
  * 
  * This class provides the complete bridge between Lua and Haxe,
- * allowing Lua code to:
- * - Create Haxe instances
- * - Access properties naturally
- * - Call methods with :syntax
- * - Use constants and enums
- * - Extend classes
- * - Type conversion automatically
+ * allowing Lua code to create objects, access properties, and call
+ * methods with seamless integration.
  * 
  * Usage in Lua:
  * ```lua
- * -- Create objects naturally
+ * -- Create objects
  * local sprite = Haxe.create('flixel.FlxSprite', 100, 200)
  * sprite:loadGraphic('assets/image.png')
  * sprite.x = 500
@@ -43,20 +38,10 @@ import sys.io.File;
  * local RED = Haxe.get('flixel.util.FlxColor.RED')
  * 
  * -- Call static methods
- * local path = Haxe.callStatic('backend.Paths', 'mods', 'images')
+ * local path = Haxe.static('backend.Paths', 'mods', 'images')
  * 
  * -- Enum values
- * local LEFT = Haxe.enum('flixel.input.keyboard.FlxKey.LEFT')
- * 
- * -- Type checking
- * if Haxe.is(sprite, 'flixel.FlxSprite') then
- *     print('Sprite!')
- * end
- * 
- * -- Iterate objects
- * for k, v in pairs(sprite) do
- *     print(k, v)
- * end
+ * local LEFT = Haxe.enum('flixel.input.keyboard.FlxKey', 'LEFT')
  * ```
  */
 class LuaBridge
@@ -70,8 +55,7 @@ class LuaBridge
         return _instance;
     }
     
-    // Object registry for tracking created objects
-    private var objectRegistry:StringMap<Dynamic>;
+    // Object registry
     private var proxyRegistry:StringMap<LuaObjectProxy>;
     private var nextProxyId:Int = 0;
     
@@ -80,22 +64,19 @@ class LuaBridge
     
     public function new()
     {
-        objectRegistry = new StringMap();
         proxyRegistry = new StringMap();
         converters = new StringMap();
-        
         initConverters();
     }
     
     /**
-     * Initialize the bridge - called from FunkinLua
+     * Initialize the bridge
      */
     public function init(lua:State):Void
     {
         registerGlobalFunctions(lua);
         registerTypeSystem(lua);
         registerObjectFactory(lua);
-        registerExtensionSystem(lua);
     }
     
     // ============================================
@@ -105,17 +86,20 @@ class LuaBridge
     function registerGlobalFunctions(lua:State):Void
     {
         // Haxe table - main entry
-        Lua_helper.add_callback(lua, "Haxe", function(action:String, ...args:Dynamic):Dynamic {
-            return handleHaxeCall(action, [for (a in args) a]);
+        Lua_helper.add_callback(lua, "Haxe", function(action:String, ?args:Array<Dynamic> = null):Dynamic {
+            if (args == null) args = [];
+            return handleHaxeCall(action, args);
         });
         
         // Shortcuts
-        Lua_helper.add_callback(lua, "create", function(classPath:String, ...args:Dynamic):Dynamic {
-            return createHaxeObject(classPath, [for (a in args) a]);
+        Lua_helper.add_callback(lua, "create", function(classPath:String, ?args:Array<Dynamic> = null):Dynamic {
+            if (args == null) args = [];
+            return createHaxeObject(classPath, args);
         });
         
-        Lua_helper.add_callback(lua, "new", function(classPath:String, ...args:Dynamic):Dynamic {
-            return createHaxeObject(classPath, [for (a in args) a]);
+        Lua_helper.add_callback(lua, "new", function(classPath:String, ?args:Array<Dynamic> = null):Dynamic {
+            if (args == null) args = [];
+            return createHaxeObject(classPath, args);
         });
         
         Lua_helper.add_callback(lua, "get", function(path:String):Dynamic {
@@ -126,12 +110,14 @@ class LuaBridge
             setHaxeValue(path, value);
         });
         
-        Lua_helper.add_callback(lua, "call", function(path:String, ...args:Dynamic):Dynamic {
-            return callHaxeMethod(path, [for (a in args) a]);
+        Lua_helper.add_callback(lua, "call", function(path:String, ?args:Array<Dynamic> = null):Dynamic {
+            if (args == null) args = [];
+            return callHaxeMethod(path, args);
         });
         
-        Lua_helper.add_callback(lua, "static", function(classPath:String, method:String, ...args:Dynamic):Dynamic {
-            return callStaticMethod(classPath, method, [for (a in args) a]);
+        Lua_helper.add_callback(lua, "static", function(classPath:String, method:String, ?args:Array<Dynamic> = null):Dynamic {
+            if (args == null) args = [];
+            return callStaticMethod(classPath, method, args);
         });
         
         Lua_helper.add_callback(lua, "typeof", function(obj:Dynamic):String {
@@ -150,12 +136,9 @@ class LuaBridge
             return getEnumValue(enumPath, value);
         });
         
-        Lua_helper.add_callback(lua, "extends", function(baseClass:String, ...extensions:Dynamic):Dynamic {
-            return createExtendedClass(baseClass, [for (e in extensions) e]);
-        });
-        
-        Lua_helper.add_callback(lua, "implements", function(classPath:String, ...interfaces:Dynamic):Dynamic {
-            return markImplemented(classPath, [for (i in interfaces) Std.string(i)]);
+        Lua_helper.add_callback(lua, "extends", function(baseClass:String, ?extensions:Array<Dynamic> = null):Dynamic {
+            if (extensions == null) extensions = [];
+            return createExtendedClass(baseClass, extensions);
         });
     }
     
@@ -185,25 +168,8 @@ class LuaBridge
             return classExtends(classPath, parentPath);
         });
         
-        Lua_helper.add_callback(lua, "interfaces", function(classPath:String):Array<String> {
-            return listInterfaces(classPath);
-        });
-        
-        Lua_helper.add_callback(lua, "isAbstract", function(classPath:String):Bool {
-            return false; // Simplified
-        });
-        
         Lua_helper.add_callback(lua, "isEnum", function(value:Dynamic):Bool {
             return Std.is(value, Enum);
-        });
-        
-        Lua_helper.add_callback(lua, "isStruct", function(classPath:String):Bool {
-            return false; // Haxe doesn't have structs like C#
-        });
-        
-        Lua_helper.add_callback(lua, "typeParams", function(classPath:String):Array<String> {
-            // Return generic type parameters
-            return [];
         });
     }
     
@@ -213,76 +179,37 @@ class LuaBridge
     
     function registerObjectFactory(lua:State):Void
     {
-        // Create with args
-        Lua_helper.add_callback(lua, "__create", function(classPath:String, args:Array<Dynamic>):Dynamic {
-            return createHaxeObject(classPath, args);
-        });
-        
-        // Clone object
         Lua_helper.add_callback(lua, "__clone", function(obj:Dynamic):Dynamic {
             return cloneHaxeObject(obj);
         });
         
-        // Destroy object
         Lua_helper.add_callback(lua, "__destroy", function(obj:Dynamic):Void {
             destroyHaxeObject(obj);
         });
         
-        // Get property
         Lua_helper.add_callback(lua, "__get", function(obj:Dynamic, prop:String):Dynamic {
             return getObjectProperty(obj, prop);
         });
         
-        // Set property
         Lua_helper.add_callback(lua, "__set", function(obj:Dynamic, prop:String, value:Dynamic):Void {
             setObjectProperty(obj, prop, value);
         });
         
-        // Call method
-        Lua_helper.add_callback(lua, "__call", function(obj:Dynamic, method:String, args:Array<Dynamic>):Dynamic {
+        Lua_helper.add_callback(lua, "__call", function(obj:Dynamic, method:String, ?args:Array<Dynamic> = null):Dynamic {
+            if (args == null) args = [];
             return callObjectMethod(obj, method, args);
         });
         
-        // Iterate properties
         Lua_helper.add_callback(lua, "__pairs", function(obj:Dynamic):Array<Dynamic> {
             return iterateObjectProperties(obj);
         });
         
-        // To string
         Lua_helper.add_callback(lua, "__tostring", function(obj:Dynamic):String {
             return objectToString(obj);
         });
         
-        // Get type
         Lua_helper.add_callback(lua, "__type", function(obj:Dynamic):String {
             return getObjectType(obj);
-        });
-    }
-    
-    // ============================================
-    // EXTENSION SYSTEM
-    // ============================================
-    
-    function registerExtensionSystem(lua:State):Void
-    {
-        Lua_helper.add_callback(lua, "addMethod", function(classPath:String, methodName:String, func:Dynamic):Void {
-            addClassMethod(classPath, methodName, func);
-        });
-        
-        Lua_helper.add_callback(lua, "addProperty", function(classPath:String, propName:String, getter:Dynamic, setter:Dynamic):Void {
-            addClassProperty(classPath, propName, getter, setter);
-        });
-        
-        Lua_helper.add_callback(lua, "wrap", function(obj:Dynamic):Dynamic {
-            return wrapAsLuaObject(obj);
-        });
-        
-        Lua_helper.add_callback(lua, "unwrap", function(proxy:Dynamic):Dynamic {
-            return unwrapFromLuaObject(proxy);
-        });
-        
-        Lua_helper.add_callback(lua, "proxy", function(obj:Dynamic):Dynamic {
-            return createObjectProxy(obj);
         });
     }
     
@@ -352,7 +279,6 @@ class LuaBridge
             return null;
         }
         
-        // Create proxy
         return wrapAsLuaObject(instance);
     }
     
@@ -370,7 +296,6 @@ class LuaBridge
             case 7: return Type.createInstance(cls, [args[0], args[1], args[2], args[3], args[4], args[5], args[6]]);
             case 8: return Type.createInstance(cls, [args[0], args[1], args[2], args[3], args[4], args[5], args[6], args[7]]);
             default:
-                // For more args, create empty instance and use setters
                 return Type.createInstance(cls, args.slice(0, 10));
         }
     }
@@ -383,14 +308,12 @@ class LuaBridge
     {
         var parts = path.split('.');
         if (parts.length < 2) {
-            // Try local context
             return getLocalContextValue(path);
         }
         
         var current:Dynamic = null;
         var i = 0;
         
-        // Resolve first part
         var first = parts[0];
         if (first == 'Haxe' || first == 'haxe') {
             i = 1;
@@ -404,12 +327,10 @@ class LuaBridge
             }
         }
         
-        // Navigate path
         while (i < parts.length && current != null)
         {
             var part = parts[i];
             
-            // Check for getter
             var getter = Reflect.field(current, 'get_' + part);
             if (getter != null && Reflect.isFunction(getter)) {
                 current = Reflect.callMethod(current, getter, []);
@@ -417,7 +338,6 @@ class LuaBridge
                 current = Reflect.field(current, part);
             }
             
-            // Handle enum parameters
             if (current != null && Std.is(current, Enum)) {
                 if (i + 1 < parts.length) {
                     i++;
@@ -442,7 +362,6 @@ class LuaBridge
         var parts = path.split('.');
         if (parts.length < 2) return;
         
-        // Find target
         var target:Dynamic = null;
         var lastPart:String = '';
         
@@ -453,7 +372,6 @@ class LuaBridge
         }
         
         if (target != null) {
-            // Check for setter
             var setter = Reflect.field(target, 'set_' + lastPart);
             if (setter != null && Reflect.isFunction(setter)) {
                 Reflect.callMethod(target, setter, [coerceToHaxe(value)]);
@@ -465,7 +383,6 @@ class LuaBridge
     
     function getLocalContextValue(name:String):Dynamic
     {
-        // Try PlayState
         try {
             var ps = Type.resolveClass('states.PlayState');
             if (ps != null) {
@@ -486,7 +403,6 @@ class LuaBridge
     
     public function callHaxeMethod(path:String, args:Array<Dynamic>):Dynamic
     {
-        // Path format: 'objectPath.methodName' or 'ClassName.methodName'
         var lastDot = path.lastIndexOf('.');
         if (lastDot == -1) return null;
         
@@ -522,8 +438,8 @@ class LuaBridge
         
         var method = Reflect.field(obj, methodName);
         if (method == null || !Reflect.isFunction(method)) {
-            // Try as property
-            return Reflect.field(obj, methodName);
+            var prop = Reflect.field(obj, methodName);
+            return prop;
         }
         
         var haxeArgs = [for (a in args) coerceToHaxe(a)];
@@ -562,7 +478,6 @@ class LuaBridge
         if (Std.is(obj, Float)) return 'Float';
         if (Std.is(obj, Bool)) return 'Bool';
         if (Std.is(obj, Array)) return 'Array';
-        if (Std.is(obj, Bool)) return 'Bool';
         
         var cls = Type.getClass(obj);
         if (cls != null) return Type.getClassName(cls);
@@ -625,7 +540,6 @@ class LuaBridge
         
         var methods:Array<String> = [];
         
-        // Static methods
         for (field in Type.getClassFields(cls)) {
             var value = Reflect.field(cls, field);
             if (Reflect.isFunction(value)) {
@@ -633,7 +547,6 @@ class LuaBridge
             }
         }
         
-        // Instance methods
         try {
             var instance = Type.createEmptyInstance(cls);
             for (field in Reflect.fields(instance)) {
@@ -711,18 +624,12 @@ class LuaBridge
         
         if (cls == null || parent == null) return false;
         
-        var current = cls;
+        var current = Type.getSuperClass(cls);
         while (current != null) {
             if (current == parent) return true;
             current = Type.getSuperClass(current);
         }
         return false;
-    }
-    
-    public function listInterfaces(classPath:String):Array<String>
-    {
-        // Haxe doesn't easily expose interfaces at runtime
-        return [];
     }
     
     // ============================================
@@ -739,7 +646,6 @@ class LuaBridge
         try {
             var newInstance = Type.createInstance(cls, []);
             
-            // Copy all fields
             for (field in Reflect.fields(obj)) {
                 if (field.charAt(0) != '_') {
                     var value = Reflect.field(obj, field);
@@ -814,27 +720,7 @@ class LuaBridge
     {
         var cls:Class<Dynamic> = Type.resolveClass(baseClass);
         if (cls == null) return null;
-        
-        // For now, return the base class
-        // Full implementation would require HScript or macros
         return cls;
-    }
-    
-    public function markImplemented(classPath:String, interfaces:Array<String>):Void
-    {
-        // Mark class as implementing interfaces
-        // Useful for documentation purposes
-    }
-    
-    public function addClassMethod(classPath:String, methodName:String, func:Dynamic):Void
-    {
-        // Add method to class at runtime
-        // Useful for extending existing classes
-    }
-    
-    public function addClassProperty(classPath:String, propName:String, getter:Dynamic, setter:Dynamic):Void
-    {
-        // Add property to class at runtime
     }
     
     // ============================================
@@ -856,12 +742,10 @@ class LuaBridge
             case TClass(c):
                 var className = Type.getClassName(c);
                 
-                // Special handling for common types
                 if (Std.is(value, FlxColor)) return wrapFlxColor(cast value);
                 if (Std.is(value, FlxPoint)) return wrapFlxPoint(cast value);
                 if (Std.is(value, FlxRect)) return wrapFlxRect(cast value);
                 
-                // Wrap as Lua object
                 return wrapAsLuaObject(value);
             case TEnum(e):
                 return {
@@ -877,19 +761,16 @@ class LuaBridge
     {
         if (value == null) return null;
         
-        // Already Haxe types
         if (Std.is(value, String) || Std.is(value, Int) || Std.is(value, Float) || Std.is(value, Bool)) {
             return value;
         }
         
-        // Unwrap Lua objects
-        if (Reflect.hasField(value, '__obj')) {
-            return Reflect.field(value, '__obj');
-        }
-        
-        // Arrays stay arrays
         if (Std.is(value, Array)) {
             return value;
+        }
+        
+        if (Reflect.hasField(value, '__obj')) {
+            return Reflect.field(value, '__obj');
         }
         
         return value;
@@ -911,15 +792,11 @@ class LuaBridge
             className = Type.getClassName(cls);
         }
         
-        // Mark as Haxe object
         Reflect.setField(table, '__type', className);
         Reflect.setField(table, '__obj', obj);
         Reflect.setField(table, '__id', nextProxyId++);
         
-        // Copy common properties
         copyObjectProperties(obj, table);
-        
-        // Add common methods as closures
         addCommonMethods(obj, table);
         
         return table;
@@ -943,16 +820,12 @@ class LuaBridge
     {
         var self = this;
         
-        // All objects get these
         Reflect.setField(table, 'destroy', function() {
-            var o = Reflect.field(table, '__obj');
-            self.destroyHaxeObject(o);
-            return nil;
+            self.destroyHaxeObject(obj);
         });
         
         Reflect.setField(table, 'clone', function() {
-            var o = Reflect.field(table, '__obj');
-            return self.cloneHaxeObject(o);
+            return self.cloneHaxeObject(obj);
         });
         
         Reflect.setField(table, 'type', function() {
@@ -960,23 +833,8 @@ class LuaBridge
         });
         
         Reflect.setField(table, 'toString', function() {
-            var o = Reflect.field(table, '__obj');
-            return self.objectToString(o);
+            return self.objectToString(obj);
         });
-    }
-    
-    public function unwrapFromLuaObject(proxy:Dynamic):Dynamic
-    {
-        if (proxy == null) return null;
-        if (Reflect.hasField(proxy, '__obj')) {
-            return Reflect.field(proxy, '__obj');
-        }
-        return proxy;
-    }
-    
-    public function createObjectProxy(obj:Dynamic):Dynamic
-    {
-        return wrapAsLuaObject(obj);
     }
     
     // ============================================
@@ -1025,7 +883,6 @@ class LuaBridge
     
     function initConverters():Void
     {
-        // FlxColor converter
         converters.set('flixel.util.FlxColor', function(color:FlxColor):Dynamic {
             return wrapFlxColor(color);
         });
@@ -1037,7 +894,6 @@ class LuaBridge
     
     public function reset():Void
     {
-        objectRegistry.clear();
         proxyRegistry.clear();
         nextProxyId = 0;
         FunkinLua.luaTrace('LuaBridge: Reset complete', false, false, FlxColor.GREEN);

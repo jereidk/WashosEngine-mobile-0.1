@@ -1572,8 +1572,8 @@ class FunkinLua {
 			LuaUtils.implement(this);
 			ExtendedLuaFunctions.implement(this);
 			
-			// Initialize ScriptBridge for advanced Lua access
-			ScriptBridge.instance.init(this);
+			
+			
 			LuaBridge.instance.init(lua);
 
 		for (name => func in customFunctions)

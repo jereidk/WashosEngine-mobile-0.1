@@ -6,7 +6,6 @@ import flixel.FlxObject;
 import flixel.FlxText;
 import flixel.FlxCamera;
 import flixel.FlxGroup;
-import flixel.group.FlxGroup.FlxTypedGroup;
 import flixel.math.FlxPoint;
 import flixel.math.FlxRect;
 import flixel.util.FlxColor;
@@ -21,46 +20,8 @@ import sys.io.File;
 /**
  * Extended Lua Functions - Advanced scripting capabilities for WashosEngine
  * 
- * These functions give modders deep access to the engine internals.
- * 
- * Usage:
- * ```lua
- * -- Object manipulation
- * makeObject('mySprite', 'assets/images/character.png', 100, 200)
- * object('mySprite'):setPosition(300, 400)
- * object('mySprite'):addAnimation('idle', {0,1,2,3}, 12)
- * 
- * -- Direct property access
- * setPropertyDirect('PlayState.curBeat', 0)
- * local beat = getPropertyDirect('PlayState.curBeat')
- * 
- * -- Class instantiation
- * local note = new('objects.Note', 100, 200, 0)
- * note:kill()
- * 
- * -- Reflection
- * local methods = listMethods('objects.Note')
- * for i, m in ipairs(methods) do print(m) end
- * 
- * -- Advanced tweens
- * tweenObject('mySprite', {x = 500, y = 300, angle = 360}, 2, 'linear', 
- *     function() print('Done!') end)
- * 
- * -- Event hooks
- * onEvent('onBeatHit', function(beat)
- *     print('Beat: ' .. beat)
- * end)
- * 
- * -- Array/Table operations
- * local arr = {1, 2, 3, 4, 5}
- * table.sort(arr, function(a, b) return a > b end)
- * table.map(arr, function(x) return x * 2 end)
- * 
- * -- Dynamic callbacks
- * registerCallback('customEvent', function(arg1, arg2)
- *     print('Custom: ' .. arg1 .. ', ' .. arg2)
- * end)
- * ```
+ * These functions provide additional utilities for modders that complement
+ * the LuaBridge system. They focus on object manipulation, tweens, and utilities.
  */
 class ExtendedLuaFunctions
 {
@@ -69,15 +30,15 @@ class ExtendedLuaFunctions
         var lua:State = funk.lua;
         
         // === OBJECT FACTORY ===
-        // Create and manage game objects
-        Lua_helper.add_callback(lua, "makeObject", function(name:String, graphic:String, ?x:Float = 0, ?y:Float = 0) {
+        // Create and manage game objects (uses LuaBridge.create internally)
+        Lua_helper.add_callback(lua, "makeSprite", function(name:String, graphic:String, ?x:Float = 0, ?y:Float = 0) {
             var spr:FlxSprite = new FlxSprite(x, y);
             spr.loadGraphic(graphic);
             funk.setVar(name, spr);
             return spr;
         });
         
-        Lua_helper.add_callback(lua, "makeAnimatedObject", function(name:String, graphic:String, ?x:Float = 0, ?y:Float = 0, ?width:Int = 0, ?height:Int = 0, ?imageArrays:Array<String> = null) {
+        Lua_helper.add_callback(lua, "makeAnimatedSprite", function(name:String, graphic:String, ?x:Float = 0, ?y:Float = 0, ?width:Int = 0, ?height:Int = 0, ?imageArrays:Array<Int> = null) {
             var spr:FlxSprite = new FlxSprite(x, y);
             if (imageArrays != null && imageArrays.length > 0) {
                 spr.loadGraphic(graphic, true, width, height);
@@ -90,11 +51,11 @@ class ExtendedLuaFunctions
             return spr;
         });
         
-        Lua_helper.add_callback(lua, "object", function(name:String):Dynamic {
+        Lua_helper.add_callback(lua, "getSprite", function(name:String):Dynamic {
             return funk.getVar(name);
         });
         
-        Lua_helper.add_callback(lua, "removeObject", function(name:String) {
+        Lua_helper.add_callback(lua, "removeSprite", function(name:String) {
             var obj:Dynamic = funk.getVar(name);
             if (obj != null && Std.is(obj, FlxBasic)) {
                 obj.destroy();
@@ -102,86 +63,8 @@ class ExtendedLuaFunctions
             funk.setVar(name, null);
         });
         
-        // === DIRECT PROPERTY ACCESS ===
-        // Get/set properties directly without dot notation limitations
-        Lua_helper.add_callback(lua, "getPropertyDirect", function(path:String):Dynamic {
-            return ScriptBridge.instance.getPropertyFromPath(path);
-        });
-        
-        Lua_helper.add_callback(lua, "setPropertyDirect", function(path:String, value:Dynamic):Void {
-            ScriptBridge.instance.setPropertyFromPath(path, value);
-        });
-        
-        Lua_helper.add_callback(lua, "callFunction", function(path:String, ?args:Array<Dynamic> = null):Dynamic {
-            return ScriptBridge.instance.callMethodOnObject(path, '', args);
-        });
-        
-        // === CLASS INSTANTIATION ===
-        // Create instances of any class
-        Lua_helper.add_callback(lua, "new", function(classPath:String, ?args:Array<Dynamic> = null):Dynamic {
-            return ScriptBridge.instance.createInstanceFromPath(classPath, args);
-        });
-        
-        Lua_helper.add_callback(lua, "instantiate", function(classPath:String, ?args:Array<Dynamic> = null):Dynamic {
-            return ScriptBridge.instance.createInstanceFromPath(classPath, args);
-        });
-        
-        // === STATIC CALLS ===
-        // Call static methods on classes
-        Lua_helper.add_callback(lua, "callStatic", function(classPath:String, method:String, ?args:Array<Dynamic> = null):Dynamic {
-            return ScriptBridge.instance.callStaticMethod(classPath, method, args);
-        });
-        
-        Lua_helper.add_callback(lua, "staticCall", function(classPath:String, method:String, ?args:Array<Dynamic> = null):Dynamic {
-            return ScriptBridge.instance.callStaticMethod(classPath, method, args);
-        });
-        
-        // === REFLECTION ===
-        // List available classes, methods, properties
-        Lua_helper.add_callback(lua, "listMethods", function(classPath:String):Array<String> {
-            return ScriptBridge.instance.getClassMethods(classPath);
-        });
-        
-        Lua_helper.add_callback(lua, "listProperties", function(classPath:String):Array<String> {
-            return ScriptBridge.instance.getClassProperties(classPath);
-        });
-        
-        Lua_helper.add_callback(lua, "listClasses", function(?filter:String = null):Array<String> {
-            return ScriptBridge.instance.getAvailableClasses(filter);
-        });
-        
-        Lua_helper.add_callback(lua, "listStatics", function(classPath:String):Array<String> {
-            var cls:Class<Dynamic> = Type.resolveClass(classPath);
-            if (cls == null) return [];
-            
-            var statics:Array<String> = [];
-            for (field in Type.getClassFields(cls)) {
-                if (!Reflect.isFunction(Reflect.field(cls, field))) {
-                    statics.push(field);
-                }
-            }
-            return statics;
-        });
-        
-        Lua_helper.add_callback(lua, "inspect", function(obj:Dynamic, ?depth:Int = 0):Dynamic {
-            return inspectObject(obj, depth);
-        });
-        
-        // === OBJECT METHODS ===
-        // Call methods on objects by name
-        Lua_helper.add_callback(lua, "objectCall", function(objName:String, method:String, ?args:Array<Dynamic> = null):Dynamic {
-            var obj:Dynamic = funk.getVar(objName);
-            if (obj == null) return null;
-            
-            var methodFunc = Reflect.field(obj, method);
-            if (methodFunc == null || !Reflect.isFunction(methodFunc)) return null;
-            
-            if (args == null) args = [];
-            return Reflect.callMethod(obj, methodFunc, args);
-        });
-        
         // === ADVANCED TWEENING ===
-        Lua_helper.add_callback(lua, "tweenObject", function(objName:String, props:Dynamic, duration:Float, ?ease:String = 'linear', ?onComplete:Void->Void = null) {
+        Lua_helper.add_callback(lua, "tweenSprite", function(objName:String, props:Dynamic, duration:Float, ?ease:String = 'linear', ?onComplete:Void->Void = null) {
             var obj:Dynamic = funk.getVar(objName);
             if (obj == null || !Std.is(obj, FlxSprite)) return;
             
@@ -200,24 +83,15 @@ class ExtendedLuaFunctions
             return tween;
         });
         
-        Lua_helper.add_callback(lua, "tweenCamera", function(props:Dynamic, duration:Float, ?ease:String = 'linear', ?onComplete:Void->Void = null) {
+        Lua_helper.add_callback(lua, "tweenCameraShake", function(intensity:Float, duration:Float, ?onComplete:Void->Void = null) {
             var cam:FlxCamera = FlxG.camera;
-            var propsMap:Map<String, Float> = new Map();
-            
-            for (field in Reflect.fields(props)) {
-                var value:Dynamic = Reflect.field(props, field);
-                if (Std.is(value, Float)) {
-                    propsMap.set(field, value);
-                }
-            }
-            
-            var tween:FlxTween = FlxTween.tween(cam, propsMap, duration, {
-                ease: getEaseFunction(ease),
+            var tween:FlxTween = FlxTween.tween(cam, {shake: intensity}, duration, {
                 onComplete: function(_) {
+                    cam.shake(0, 0);
                     if (onComplete != null) onComplete();
                 }
             });
-            
+            cam.shake(intensity, duration);
             return tween;
         });
         
@@ -250,28 +124,23 @@ class ExtendedLuaFunctions
         });
         
         // === EVENT SYSTEM ===
-        // Register callbacks for engine events
-        Lua_helper.add_callback(lua, "onEvent", function(eventName:String, callback:Dynamic):Void {
-            registerEngineHook(eventName, callback);
-        });
-        
         Lua_helper.add_callback(lua, "registerCallback", function(name:String, callback:Dynamic):Void {
             FunkinLua.customFunctions.set(name, callback);
         });
         
-        Lua_helper.add_callback(lua, "callCallback", function(name:String, ?args:Array<Dynamic> = null):Dynamic {
+        Lua_helper.add_callback(lua, "fireCallback", function(name:String, ?args:Array<Dynamic> = null):Dynamic {
             var callback:Dynamic = FunkinLua.customFunctions.get(name);
             if (callback == null) return null;
             if (args == null) args = [];
             return Reflect.callMethod(callback, callback, args);
         });
         
-        Lua_helper.add_callback(lua, "removeCallback", function(name:String):Void {
+        Lua_helper.add_callback(lua, "unregisterCallback", function(name:String):Void {
             FunkinLua.customFunctions.remove(name);
         });
         
         // === ARRAY/TABLE OPERATIONS ===
-        Lua_helper.add_callback(lua, "tableMap", function(tbl:Array<Dynamic>, func:Dynamic):Array<Dynamic> {
+        Lua_helper.add_callback(lua, "arrayMap", function(tbl:Array<Dynamic>, func:Dynamic):Array<Dynamic> {
             var result:Array<Dynamic> = [];
             for (item in tbl) {
                 result.push(Reflect.callMethod(func, func, [item]));
@@ -279,7 +148,7 @@ class ExtendedLuaFunctions
             return result;
         });
         
-        Lua_helper.add_callback(lua, "tableFilter", function(tbl:Array<Dynamic>, func:Dynamic):Array<Dynamic> {
+        Lua_helper.add_callback(lua, "arrayFilter", function(tbl:Array<Dynamic>, func:Dynamic):Array<Dynamic> {
             var result:Array<Dynamic> = [];
             for (item in tbl) {
                 if (Reflect.callMethod(func, func, [item]) == true) {
@@ -289,7 +158,7 @@ class ExtendedLuaFunctions
             return result;
         });
         
-        Lua_helper.add_callback(lua, "tableReduce", function(tbl:Array<Dynamic>, func:Dynamic, initial:Dynamic):Dynamic {
+        Lua_helper.add_callback(lua, "arrayReduce", function(tbl:Array<Dynamic>, func:Dynamic, initial:Dynamic):Dynamic {
             var accumulator:Dynamic = initial;
             for (item in tbl) {
                 accumulator = Reflect.callMethod(func, func, [accumulator, item]);
@@ -297,7 +166,7 @@ class ExtendedLuaFunctions
             return accumulator;
         });
         
-        Lua_helper.add_callback(lua, "tableFind", function(tbl:Array<Dynamic>, func:Dynamic):Dynamic {
+        Lua_helper.add_callback(lua, "arrayFind", function(tbl:Array<Dynamic>, func:Dynamic):Dynamic {
             for (item in tbl) {
                 if (Reflect.callMethod(func, func, [item]) == true) {
                     return item;
@@ -306,15 +175,15 @@ class ExtendedLuaFunctions
             return null;
         });
         
-        Lua_helper.add_callback(lua, "tableContains", function(tbl:Array<Dynamic>, value:Dynamic):Bool {
+        Lua_helper.add_callback(lua, "arrayContains", function(tbl:Array<Dynamic>, value:Dynamic):Bool {
             return Lambda.has(tbl, value);
         });
         
-        Lua_helper.add_callback(lua, "tableClone", function(tbl:Array<Dynamic>):Array<Dynamic> {
+        Lua_helper.add_callback(lua, "arrayClone", function(tbl:Array<Dynamic>):Array<Dynamic> {
             return tbl.copy();
         });
         
-        Lua_helper.add_callback(lua, "tableConcat", function(...tables:Array<Dynamic>):Array<Dynamic> {
+        Lua_helper.add_callback(lua, "arrayMerge", function(...tables:Array<Dynamic>):Array<Dynamic> {
             var result:Array<Dynamic> = [];
             for (tbl in tables) {
                 if (Std.is(tbl, Array)) {
@@ -355,27 +224,21 @@ class ExtendedLuaFunctions
             return Std.is(obj, Int) || Std.is(obj, Float);
         });
         
-        Lua_helper.add_callback(lua, "isTable", function(obj:Dynamic):Bool {
-            return Std.is(obj, Array) || Std.is(obj, haxe.ds.StringMap);
+        Lua_helper.add_callback(lua, "isArray", function(obj:Dynamic):Bool {
+            return Std.is(obj, Array);
         });
         
         Lua_helper.add_callback(lua, "isFunction", function(obj:Dynamic):Bool {
             return Reflect.isFunction(obj);
         });
         
-        Lua_helper.add_callback(lua, "isClass", function(obj:Dynamic):Bool {
-            return Std.is(obj, Class);
-        });
-        
-        Lua_helper.add_callback(lua, "getType", function(obj:Dynamic):String {
+        Lua_helper.add_callback(lua, "getTypeName", function(obj:Dynamic):String {
             if (obj == null) return 'nil';
             if (Std.is(obj, Bool)) return 'boolean';
             if (Std.is(obj, Int) || Std.is(obj, Float)) return 'number';
             if (Std.is(obj, String)) return 'string';
             if (Std.is(obj, Array)) return 'array';
-            if (Std.is(obj, haxe.ds.StringMap)) return 'table';
             if (Reflect.isFunction(obj)) return 'function';
-            if (Std.is(obj, Class)) return 'class';
             if (Std.is(obj, FlxSprite)) return 'FlxSprite';
             if (Std.is(obj, FlxText)) return 'FlxText';
             if (Std.is(obj, FlxGroup)) return 'FlxGroup';
@@ -389,11 +252,11 @@ class ExtendedLuaFunctions
             return a + (b - a) * t;
         });
         
-        Lua_helper.add_callback(lua, "clamp", function(value:Float, min:Float, max:Float):Float {
+        Lua_helper.add_callback(lua, "clampValue", function(value:Float, min:Float, max:Float):Float {
             return Math.max(min, Math.min(max, value));
         });
         
-        Lua_helper.add_callback(lua, "random", function(min:Float, max:Float):Float {
+        Lua_helper.add_callback(lua, "randomFloat", function(min:Float, max:Float):Float {
             return Math.random() * (max - min) + min;
         });
         
@@ -401,11 +264,11 @@ class ExtendedLuaFunctions
             return Std.int(Math.random() * (max - min + 1)) + min;
         });
         
-        Lua_helper.add_callback(lua, "randomFromArray", function(arr:Array<Dynamic>):Dynamic {
+        Lua_helper.add_callback(lua, "randomPick", function(arr:Array<Dynamic>):Dynamic {
             return arr[Std.int(Math.random() * arr.length)];
         });
         
-        Lua_helper.add_callback(lua, "shuffle", function(arr:Array<Dynamic>):Array<Dynamic> {
+        Lua_helper.add_callback(lua, "shuffleArray", function(arr:Array<Dynamic>):Array<Dynamic> {
             var result = arr.copy();
             for (i in 0...result.length) {
                 var j = Std.int(Math.random() * result.length);
@@ -416,15 +279,15 @@ class ExtendedLuaFunctions
             return result;
         });
         
-        Lua_helper.add_callback(lua, "distance", function(x1:Float, y1:Float, x2:Float, y2:Float):Float {
+        Lua_helper.add_callback(lua, "distance2D", function(x1:Float, y1:Float, x2:Float, y2:Float):Float {
             return Math.sqrt((x2 - x1) * (x2 - x1) + (y2 - y1) * (y2 - y1));
         });
         
-        Lua_helper.add_callback(lua, "angle", function(x1:Float, y1:Float, x2:Float, y2:Float):Float {
+        Lua_helper.add_callback(lua, "angle2D", function(x1:Float, y1:Float, x2:Float, y2:Float):Float {
             return Math.atan2(y2 - y1, x2 - x1) * (180 / Math.PI);
         });
         
-        Lua_helper.add_callback(lua, "round", function(value:Float, ?decimals:Int = 0):Float {
+        Lua_helper.add_callback(lua, "roundTo", function(value:Float, ?decimals:Int = 0):Float {
             var mult = Math.pow(10, decimals);
             return Math.round(value * mult) / mult;
         });
@@ -443,7 +306,7 @@ class ExtendedLuaFunctions
             return FileSystem.exists(path);
         });
         
-        Lua_helper.add_callback(lua, "readFile", function(path:String):String {
+        Lua_helper.add_callback(lua, "readTextFile", function(path:String):String {
             try {
                 return File.getContent(path);
             } catch (e:Dynamic) {
@@ -451,7 +314,7 @@ class ExtendedLuaFunctions
             }
         });
         
-        Lua_helper.add_callback(lua, "writeFile", function(path:String, content:String):Bool {
+        Lua_helper.add_callback(lua, "writeTextFile", function(path:String, content:String):Bool {
             try {
                 File.saveContent(path, content);
                 return true;
@@ -460,7 +323,7 @@ class ExtendedLuaFunctions
             }
         });
         
-        Lua_helper.add_callback(lua, "appendFile", function(path:String, content:String):Bool {
+        Lua_helper.add_callback(lua, "appendTextFile", function(path:String, content:String):Bool {
             try {
                 File.saveContent(path, File.getContent(path) + content);
                 return true;
@@ -469,7 +332,7 @@ class ExtendedLuaFunctions
             }
         });
         
-        Lua_helper.add_callback(lua, "listFiles", function(dir:String):Array<String> {
+        Lua_helper.add_callback(lua, "listDirectory", function(dir:String):Array<String> {
             try {
                 if (!FileSystem.exists(dir)) return [];
                 return FileSystem.readDirectory(dir);
@@ -478,7 +341,7 @@ class ExtendedLuaFunctions
             }
         });
         
-        Lua_helper.add_callback(lua, "isDirectory", function(path:String):Bool {
+        Lua_helper.add_callback(lua, "isDir", function(path:String):Bool {
             try {
                 return FileSystem.isDirectory(path);
             } catch (e:Dynamic) {
@@ -487,19 +350,19 @@ class ExtendedLuaFunctions
         });
         
         // === DEBUG ===
-        Lua_helper.add_callback(lua, "print_r", function(obj:Dynamic, ?depth:Int = 0):String {
+        Lua_helper.add_callback(lua, "inspectValue", function(obj:Dynamic, ?depth:Int = 0):Dynamic {
             return inspectObject(obj, depth);
         });
         
-        Lua_helper.add_callback(lua, "debugVars", function():Void {
+        Lua_helper.add_callback(lua, "debugAllVars", function():Void {
             var vars = funk.getLocalVariables();
             for (key in vars.keys()) {
                 FunkinLua.luaTrace('$key = ${vars.get(key)}', false, false, FlxColor.CYAN);
             }
         });
         
-        Lua_helper.add_callback(lua, "help", function(?item:String = null):Dynamic {
-            return ScriptBridge.instance.getHelp(item);
+        Lua_helper.add_callback(lua, "printTable", function(obj:Dynamic):String {
+            return inspectObject(obj, 0);
         });
     }
     
@@ -512,33 +375,6 @@ class ExtendedLuaFunctions
             return ease;
         }
         return FlxEase.linear;
-    }
-    
-    static function registerEngineHook(eventName:String, callback:Dynamic):Void
-    {
-        var hookPath:String = '';
-        
-        switch (eventName)
-        {
-            case 'onBeatHit':
-                hookPath = 'PlayState.onBeatHit';
-            case 'onStepHit':
-                hookPath = 'PlayState.onStepHit';
-            case 'onStart':
-                hookPath = 'PlayState.create';
-            case 'onEnd':
-                hookPath = 'PlayState.destroy';
-            case 'onUpdate':
-                hookPath = 'PlayState.update';
-            case 'onNoteHit':
-                hookPath = 'PlayState.onNoteHit';
-            case 'onMiss':
-                hookPath = 'PlayState.onMiss';
-            default:
-                hookPath = eventName;
-        }
-        
-        ScriptBridge.instance.registerHook(hookPath, callback);
     }
     
     static function inspectObject(obj:Dynamic, ?depth:Int = 0):Dynamic
@@ -565,7 +401,6 @@ class ExtendedLuaFunctions
             return result;
         }
         
-        // Object/Class
         var result:Dynamic = {};
         var fields:Array<String> = [];
         
