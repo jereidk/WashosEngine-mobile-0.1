@@ -2,111 +2,89 @@
 
 ## Overview
 
-This engine supports GPU-compressed textures (ASTC, BC, DXT5, ETC1) for optimized performance on mobile and desktop platforms. This is based on the approach used by [Shadow Engine](https://github.com/ShadowEngineTeam/FNF-Shadow-Engine) and [Funkin Crew](https://github.com/FunkinCrew/funkin).
+This engine supports GPU-compressed textures (ASTC for Android, BC for Windows) for optimized performance. Based on [Shadow Engine](https://github.com/ShadowEngineTeam/FNF-Shadow-Engine) approach.
+
+## How It Works
+
+The system is **build-time configuration**, not runtime loading:
+
+1. **Project.xml** defines asset paths for each format:
+   - `assets/images-astc` → `assets/shared/images` (Android)
+   - `assets/images-bc` → `assets/shared/images` (Windows)
+   - `assets/images-png` → `assets/shared/images` (fallback)
+
+2. **USING_GPU_TEXTURES haxedef** is set for Android builds
+
+3. **OpenFL automatically** loads the correct format based on asset paths
 
 ## Quick Start
 
 ### 1. Generate GPU Textures
 
 ```bash
-# Navigate to the GPU texture generator
 cd gpu_texture_generator
-
-# Run the build script
 ./build.sh
 ```
 
-Or use the Python script directly:
+This converts all PNG images in `assets/` to ASTC format in `assets/images-astc/`.
+
+### 2. Build for Android
 
 ```bash
-python generate_gpu_textures.py -i ../assets -o ../assets-gpu -f ASTC
+lime build android -release
 ```
 
-### 2. Configure Compression
-
-Edit `astc-compression-data.json` to customize compression settings:
-
-```json
-{
-  "defaultSettings": {
-    "blockSize": "6x6",
-    "quality": "medium",
-    "premultiplyAlpha": true
-  },
-  "textureCategories": {
-    "notes": {
-      "pattern": "**/noteSkins/**",
-      "blockSize": "6x6",
-      "quality": "thorough"
-    },
-    "characters": {
-      "pattern": "**/characters/**",
-      "blockSize": "5x5",
-      "quality": "thorough"
-    }
-  }
-}
-```
+OpenFL automatically uses `.astc` files from `assets/images-astc/` when available.
 
 ## File Structure
 
 ```
 WashosEngine/
-├── project.hxp                    # Texture format configuration
-├── astc-compression-data.json     # Compression settings
-├── assets-gpu/                    # Generated GPU textures
-│   └── astc/                      # ASTC format textures
-│       └── astc_manifest.json     # Texture manifest
-├── gpu_texture_generator/         # Texture conversion tools
+├── Project.xml                    # Asset path configuration
+├── project.hxp                    # Texture format settings
+├── astc-compression-data.json     # Compression presets
+├── assets/
+│   └── shared/images/            # Source PNG images
+├── assets/images-astc/            # Generated ASTC textures (Android)
+├── assets/images-bc/             # Generated BC textures (Windows)
+├── gpu_texture_generator/         # Conversion tools
 │   ├── build.sh                  # Bash script for NDK
-│   ├── generate_gpu_textures.py  # Python converter
-│   └── compress_astc.py          # ASTC compressor
+│   └── generate_gpu_textures.py  # Python converter
 └── source/
     └── backend/
         └── gpu/
-            └── GPUTextureLoader.hx  # Haxe texture loader
+            └── GPUTextureLoader.hx  # Helper utilities
 ```
 
 ## Texture Formats
 
-| Format | Extension | Platform | Quality |
-|--------|-----------|----------|---------|
-| ASTC | .astc | Android (all), iOS | Best |
-| BC | .dds | Windows, Xbox | High |
-| DXT5 | .dds | Windows, macOS | High |
-| ETC1 | .ktx | Android (legacy) | Medium |
+| Platform | Format | Extension | Asset Path |
+|----------|--------|-----------|------------|
+| Android | ASTC | .astc | assets/images-astc/ |
+| Windows | BC/DXT | .dds | assets/images-bc/ |
+| Other | PNG | .png | assets/images-png/ |
 
-## Block Sizes
+## Block Sizes (ASTC)
 
-| Block Size | Compression Ratio | Use Case |
-|------------|-------------------|----------|
-| 4x4 | 8:1 | UI, icons (highest quality) |
+| Size | Ratio | Use Case |
+|------|-------|----------|
+| 4x4 | 8:1 | UI, icons |
 | 5x5 | 12:1 | Characters |
-| 6x6 | 16:1 | General textures (recommended) |
-| 8x8 | 32:1 | Large backgrounds |
+| 6x6 | 16:1 | General (recommended) |
+| 8x8 | 32:1 | Backgrounds |
 
-## Quality Presets
+## Code Usage
 
-| Preset | Speed | Quality |
-|--------|-------|---------|
-| fast | Very fast | Lower |
-| medium | Fast | Balanced (default) |
-| thorough | Slow | High |
-| exhaustive | Very slow | Best |
-
-## Using in Code
-
-### Paths.hx Integration
+### Paths.hx
 
 ```haxe
-// Check if GPU textures should be used
+// Check if GPU textures are enabled
 if (Paths.shouldUseGPUTextures()) {
-    var astcPath = Paths.getASTCPath('images/character');
-    // Load ASTC texture...
+    trace('Using GPU compressed textures');
 }
 
-// Format constants
-var format = Paths.FORMAT_ASTC; // "ASTC"
+// Get current format
+var format = Paths.GPU_TEXTURE_FORMAT; // "astc", "bc", or "png"
 ```
 
 ### GPUTextureLoader
@@ -115,83 +93,80 @@ var format = Paths.FORMAT_ASTC; // "ASTC"
 #if android
 import backend.gpu.GPUTextureLoader;
 
-// Initialize
-GPUTextureLoader.init('astc-compression-data.json');
+// Check if enabled
+if (GPUTextureLoader.isEnabled()) {
+    var format = GPUTextureLoader.getCurrentFormat(); // "ASTC"
+    var suffix = GPUTextureLoader.getAssetPathSuffix(); // "-astc"
+}
 
-// Load texture (prefers ASTC if available)
-var texture = GPUTextureLoader.loadTexture('images/note');
-
-// Preload category
-GPUTextureLoader.preloadCategory('noteSkins');
-
-// Get stats
-var stats = GPUTextureLoader.getStats();
-trace('Cached: ${stats.cached}, Total: ${stats.total}, Memory: ${stats.memory}MB');
-
-// Clear cache when needed
-GPUTextureLoader.clearCache();
+// Preload texture
+var tex = GPUTextureLoader.preload('assets/shared/images/note');
 #end
 ```
 
-## Build Integration
+## Asset Path Configuration
 
-### GitHub Actions
+In **Project.xml**, asset paths are configured like this:
 
-Add to your workflow to auto-generate textures before build:
-
-```yaml
-- name: Generate GPU Textures
-  run: |
-    cd gpu_texture_generator
-    chmod +x build.sh
-    ./build.sh
+```xml
+<!-- GPU Texture Format Assets -->
+<assets path="assets/images-astc" rename="assets/shared/images" if="android"/>
+<assets path="assets/images-bc"   rename="assets/shared/images" if="windows"/>
+<assets path="assets/images-png"  rename="assets/shared/images" />
 ```
 
-### Gradle (Android)
+OpenFL checks paths in order - if `assets/images-astc/note.png.astc` exists, it's loaded instead of the PNG.
 
-The build system automatically detects `.astc` files in assets and loads them when available.
+## Conversion Tool Usage
 
-## Configuration (project.hxp)
+```bash
+# Convert all textures to ASTC (6x6 blocks, medium quality)
+python generate_gpu_textures.py -i ../assets -o ../assets/images-astc -f ASTC
+
+# With custom settings
+python generate_gpu_textures.py -i ../assets -o ../assets/images-astc -b 5x5 -q thorough
+```
+
+## Compression Configuration
+
+Edit `astc-compression-data.json`:
 
 ```json
 {
-  "textureFormats": ["ASTC", "BC", "DXT5", "ETC1"],
-  "enableGPUTextures": true,
-  "fallbackToPNG": true
+  "defaultSettings": {
+    "blockSize": "6x6",
+    "quality": "medium"
+  },
+  "textureCategories": {
+    "notes": {
+      "pattern": "**/noteSkins/**",
+      "blockSize": "6x6"
+    },
+    "characters": {
+      "pattern": "**/characters/**",
+      "blockSize": "5x5"
+    }
+  }
 }
 ```
 
 ## Troubleshooting
 
-### astcenc not found
+### Textures not loading as ASTC
 
-Install Android NDK:
+1. Verify `assets/images-astc/` contains `.astc` files
+2. Check that `USING_GPU_TEXTURES` haxedef is set in Project.xml
+3. Ensure asset paths are correctly configured
+
+### Build errors
+
+Make sure Android NDK is installed for astcenc:
 ```bash
-# Linux/macOS
 export ANDROID_NDK_ROOT=~/Android/Sdk/ndk/26.1.10909125
-
-# Windows - download from:
-# https://developer.android.com/ndk/downloads
 ```
-
-### Textures not loading
-
-1. Check that `.astc` files exist in `assets-gpu/astc/`
-2. Verify `astc_manifest.json` is present
-3. Ensure `ASTC_ENABLED` is `true` in Paths.hx
-4. Check log output for texture loading errors
-
-### Performance issues
-
-1. Use smaller block sizes (4x4 or 5x5) for critical textures
-2. Increase quality preset for important sprites
-3. Use texture pooling in hot paths
-4. Clear cache periodically to free memory
 
 ## References
 
 - [Shadow Engine](https://github.com/ShadowEngineTeam/FNF-Shadow-Engine)
-- [hx-astcenc](https://github.com/rainyt/hx-astcenc)
 - [Funkin Crew](https://github.com/FunkinCrew/funkin)
 - [ASTC Encoder](https://github.com/ARM-software/astc-encoder)
-- [Android NDK](https://developer.android.com/ndk/downloads)

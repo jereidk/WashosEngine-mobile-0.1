@@ -1,21 +1,21 @@
 {
-	"textureFormats": ["ASTC", "BC", "DXT5", "ETC1"],
+	"textureFormats": ["ASTC", "BC"],
 	"textureQuality": {
 		"ASTC": "6x6",
-		"BC": "high",
-		"DXT5": "medium",
-		"ETC1": "normal"
+		"BC": "high"
 	},
 	"compressionOptions": {
 		"ASTC": {
 			"blockSize": "6x6",
-			"quality": "medium",
-			"premultiply": true
+			"quality": "medium"
 		},
 		"BC": {
 			"quality": "high"
 		}
 	},
-	"enableGPUTextures": true,
-	"fallbackToPNG": true
+	"assetPaths": {
+		"ASTC": "assets/images-astc",
+		"BC": "assets/images-bc",
+		"PNG": "assets/images-png"
+	}
 }

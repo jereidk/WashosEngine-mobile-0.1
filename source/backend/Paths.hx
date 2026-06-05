@@ -29,50 +29,31 @@ class Paths
 	inline public static var SOUND_EXT = #if web "mp3" #else "ogg" #end;
 	inline public static var VIDEO_EXT = "mp4";
 	
-	// ASTC texture support (matching project.hxp and hx-astcenc approach)
-	#if android
-	public static var ASTC_ENABLED:Bool = true;
-	public static var ASTC_BLOCK_SIZE:String = "6x6";
-	public static var USING_GPU_TEXTURES:Bool = true;
+	// GPU Texture Format Support (Shadow Engine style)
+	// When USING_GPU_TEXTURES is defined, OpenFL automatically loads from format-specific folders
+	#if (android && USING_GPU_TEXTURES)
+	public static var GPU_TEXTURE_FORMAT:String = "astc";
+	#elseif (windows && USING_GPU_TEXTURES)
+	public static var GPU_TEXTURE_FORMAT:String = "bc";
 	#else
-	public static var ASTC_ENABLED:Bool = false;
-	public static var ASTC_BLOCK_SIZE:String = "6x6";
-	public static var USING_GPU_TEXTURES:Bool = false;
+	public static var GPU_TEXTURE_FORMAT:String = "png";
 	#end
 	
-	// Texture format constants (from project.hxp)
-	public static inline var FORMAT_ASTC:String = "ASTC";
-	public static inline var FORMAT_BC:String = "BC";
-	public static inline var FORMAT_DXT5:String = "DXT5";
-	public static inline var FORMAT_ETC1:String = "ETC1";
-	
-	// Initialize GPU texture loader
-	#if android
-	static var gpuLoaderInitialized:Bool = false;
-	#end
-	
-	// Helper to find ASTC version of a file
-	inline static public function getASTCPath(key:String, ?parentFolder:String = null):String {
-		#if android
-		if (!ASTC_ENABLED) return null;
-		var basePath = getPath(key, IMAGE, parentFolder, true);
-		var astcPath = basePath + '.astc';
-		#if MODS_ALLOWED
-		if (FileSystem.exists(astcPath)) return astcPath;
-		#end
-		// Also check in assets-gpu/astc/ folder
-		var gpuAstcPath = 'assets-gpu/astc/' + key + '.astc';
-		if (FileSystem.exists(gpuAstcPath)) return gpuAstcPath;
-		return null;
-		#else
-		return null;
-		#end
+	/**
+	 * Get the current GPU texture format for asset paths.
+	 * Returns "astc", "bc", or "png" based on platform and build settings.
+	 */
+	inline static public function getGPUTextureFormat():String {
+		return GPU_TEXTURE_FORMAT;
 	}
 	
-	// Check if GPU texture loading should be used
+	/**
+	 * Check if GPU compressed textures should be used.
+	 * This is set via -D USING_GPU_TEXTURES in project.hxp
+	 */
 	inline static public function shouldUseGPUTextures():Bool {
-		#if android
-		return USING_GPU_TEXTURES && ASTC_ENABLED;
+		#if USING_GPU_TEXTURES
+		return true;
 		#else
 		return false;
 		#end
