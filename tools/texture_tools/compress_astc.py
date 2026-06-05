@@ -13,7 +13,7 @@ Requirements:
     - Python 3.6+
 
 Example:
-    python compress_astc.py -i assets/images -o assets-astc -b 6x6 -q medium
+    python compress_astc.py -i assets/images -o assets/images-compressed -b 6x6 -q medium
 """
 
 import os
@@ -241,16 +241,16 @@ def main():
         epilog="""
 Examples:
   Basic conversion:
-    python compress_astc.py -i assets/images -o assets-astc
+    python compress_astc.py -i assets/images -o assets/images-compressed
     
   With config:
-    python compress_astc.py -i assets -o assets-astc -c ../astc-compression-data.json
+    python compress_astc.py -i assets -o assets/images-compressed -c ../astc-compression-data.json
     
   High quality (like hx-astcenc exhaustive):
-    python compress_astc.py -i assets -o assets-astc -b 4x4 -q exhaustive
+    python compress_astc.py -i assets -o assets/images-compressed -b 4x4 -q exhaustive
     
   Custom block size:
-    python compress_astc.py -i assets -o assets-astc -b 5x5 -q thorough
+    python compress_astc.py -i assets -o assets/images-compressed -b 5x5 -q thorough
         """
     )
     

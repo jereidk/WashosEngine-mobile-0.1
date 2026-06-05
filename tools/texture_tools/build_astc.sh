@@ -33,9 +33,9 @@ echo -e "${GREEN}Found astcenc: $ASTCENC${NC}"
 
 # Create output directories
 ASSETS_DIR="$PROJECT_DIR/assets"
-ASTC_OUTPUT="$PROJECT_DIR/assets-astc"
+COMPRESSED_OUTPUT="$PROJECT_DIR/assets/images-compressed"
 
-mkdir -p "$ASTC_OUTPUT"
+mkdir -p "$COMPRESSED_OUTPUT"
 
 # Function to convert a single image
 convert_image() {
@@ -62,7 +62,7 @@ echo "Converting textures..."
 find "$ASSETS_DIR" -type f \( -iname "*.png" -o -iname "*.jpg" -o -iname "*.jpeg" \) | while read -r file; do
     # Calculate relative path
     rel_path="${file#$ASSETS_DIR/}"
-    output_file="$ASTC_OUTPUT/$rel_path.astc"
+    output_file="$COMPRESSED_OUTPUT/$rel_path.astc"
     output_dir="$(dirname "$output_file")"
     
     mkdir -p "$output_dir"
@@ -73,10 +73,10 @@ done
 
 echo ""
 echo -e "${GREEN}ASTC texture conversion complete!${NC}"
-echo "Output: $ASTC_OUTPUT"
+echo "Output: $COMPRESSED_OUTPUT"
 echo ""
 echo "To use ASTC textures in your build:"
-echo "  1. Copy contents of $ASTC_OUTPUT to your Android assets folder"
+echo "  1. Copy contents of $COMPRESSED_OUTPUT to your Android assets folder"
 echo "  2. Or update your build script to copy .astc files alongside .png"
 echo ""
 echo "Or run with Lime:"

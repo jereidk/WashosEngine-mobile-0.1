@@ -324,7 +324,6 @@ class Paths
 				// Fall through to PNG loading
 			}
 		}
-		#end
 		
 		return null;
 		#else
