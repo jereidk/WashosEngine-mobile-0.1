@@ -3,7 +3,6 @@ package psychlua;
 #if LUA_ALLOWED
 import flixel.FlxSprite;
 import flixel.FlxText;
-import flixel.FlxGroup;
 import flixel.util.FlxColor;
 import flixel.group.FlxTypedGroup;
 import flixel.math.FlxPoint;
@@ -17,66 +16,50 @@ import flixel.math.FlxPoint;
  * - Rojo: Error
  * - Cyan: Debug
  * - Gris: Trace
- * 
- * Características:
- * - Scroll para ver logs antiguos
- * - Indicador de nivel de log
- * - Botón para guardar logs
- * - Toggle con tecla/botón
  */
 class DebugOverlay extends FlxTypedGroup<FlxSprite>
 {
-    // Singleton para acceso global
+    // Singleton
     public static var instance(get, never):DebugOverlay;
     private static var _instance:DebugOverlay = null;
     
-    private static inline function get_instance():DebugLogger
+    private static inline function get_instance():DebugOverlay
     {
-        return DebugLogger.instance;
+        if (_instance == null) _instance = new DebugOverlay();
+        return _instance;
     }
     
-    // ============================================
-    // CONFIGURACION
-    // ============================================
+    // Log entry structure (local copy)
+    typedef LogEntryData = {
+        var timestamp:Float;
+        var level:String;
+        var message:String;
+        var ?source:String;
+        var ?color:Int;
+    }
     
-    /** Posición en pantalla */
+    // Configuration
     public var position:FlxPoint = new FlxPoint(10, 50);
-    
-    /** Tamaño del overlay */
     public var overlayWidth:Int = 400;
     public var overlayHeight:Int = 300;
-    
-    /** Máximo de líneas visibles */
     public var maxVisibleLines:Int = 12;
+    public var backgroundColor:Int = 0xCC000000;
     
-    /** Color de fondo */
-    public var backgroundColor:Int = 0xCC000000; // Negro semi-transparente
-    
-    // ============================================
-    // ELEMENTOS VISUALES
-    // ============================================
-    
+    // Elements
     private var background:FlxSprite;
     private var logTexts:Array<FlxText>;
     private var headerText:FlxText;
     private var scrollOffset:Int = 0;
     
-    // ============================================
-    // ESTADO
-    // ============================================
-    
-    private var isVisible:Bool = false;
-    private var logs:Array<DebugLogger.LogEntry> = [];
-    
-    // ============================================
-    // CONSTRUCTOR
-    // ============================================
+    // State
+    private var isShowing:Bool = false;
+    private var logs:Array<LogEntryData> = [];
     
     public function new()
     {
         super();
         
-        // Fondo
+        // Background
         background = new FlxSprite(position.x, position.y);
         background.makeGraphic(overlayWidth, overlayHeight, backgroundColor);
         background.scrollFactor.set();
@@ -89,7 +72,7 @@ class DebugOverlay extends FlxTypedGroup<FlxSprite>
         headerText.scrollFactor.set();
         add(headerText);
         
-        // Textos de log
+        // Log texts
         logTexts = [];
         for (i in 0...maxVisibleLines) {
             var text = new FlxText(position.x + 5, position.y + 25 + (i * 20), overlayWidth - 10, '');
@@ -100,7 +83,7 @@ class DebugOverlay extends FlxTypedGroup<FlxSprite>
             add(text);
         }
         
-        // Configurar callback
+        // Setup callbacks
         DebugLogger.instance.setOnLogAdded(onLogAdded);
         DebugLogger.instance.setOnLogCleared(onLogCleared);
         
@@ -108,52 +91,39 @@ class DebugOverlay extends FlxTypedGroup<FlxSprite>
         exists = false;
     }
     
-    // ============================================
-    // FUNCIONES PUBLICAS
-    // ============================================
-    
-    /**
-     * Mostrar/ocultar overlay
-     */
+    // Toggle visibility
     public function toggle():Void
     {
-        isVisible = !isVisible;
-        visible = isVisible;
-        exists = isVisible;
+        isShowing = !isShowing;
+        visible = isShowing;
+        exists = isShowing;
+        DebugLogger.instance.setShowOverlay(isShowing);
         
-        DebugLogger.instance.setShowOverlay(isVisible);
-        
-        if (isVisible) {
+        if (isShowing) {
             refreshLogs();
         }
     }
     
-    /**
-     * Mostrar overlay
-     */
+    // Show overlay
     public function show():Void
     {
-        isVisible = true;
+        isShowing = true;
         visible = true;
         exists = true;
         DebugLogger.instance.setShowOverlay(true);
         refreshLogs();
     }
     
-    /**
-     * Ocultar overlay
-     */
+    // Hide overlay
     public function hide():Void
     {
-        isVisible = false;
+        isShowing = false;
         visible = false;
         exists = false;
         DebugLogger.instance.setShowOverlay(false);
     }
     
-    /**
-     * Scroll hacia arriba
-     */
+    // Scroll up
     public function scrollUp():Void
     {
         if (scrollOffset < logs.length - maxVisibleLines) {
@@ -162,9 +132,7 @@ class DebugOverlay extends FlxTypedGroup<FlxSprite>
         }
     }
     
-    /**
-     * Scroll hacia abajo
-     */
+    // Scroll down
     public function scrollDown():Void
     {
         if (scrollOffset > 0) {
@@ -173,37 +141,25 @@ class DebugOverlay extends FlxTypedGroup<FlxSprite>
         }
     }
     
-    /**
-     * Scroll al inicio
-     */
-    public function scrollToStart():Void
-    {
-        scrollOffset = 0;
-        updateDisplay();
-    }
-    
-    /**
-     * Scroll al final
-     */
-    public function scrollToEnd():Void
-    {
-        scrollOffset = logs.length - maxVisibleLines;
-        if (scrollOffset < 0) scrollOffset = 0;
-        updateDisplay();
-    }
-    
-    /**
-     * Actualizar logs mostrados
-     */
+    // Refresh logs display
     public function refreshLogs():Void
     {
-        logs = DebugLogger.instance.getLogs();
+        logs = [];
+        var allLogs = DebugLogger.instance.getLogs();
+        for (log in allLogs) {
+            var entry:LogEntryData = {
+                timestamp: log.timestamp,
+                level: log.level,
+                message: log.message,
+                source: log.source,
+                color: log.color
+            };
+            logs.push(entry);
+        }
         updateDisplay();
     }
     
-    /**
-     * Limpiar visualización
-     */
+    // Clear display
     public function clearDisplay():Void
     {
         for (text in logTexts) {
@@ -213,52 +169,52 @@ class DebugOverlay extends FlxTypedGroup<FlxSprite>
         scrollOffset = 0;
     }
     
-    /**
-     * Verificar si está visible
-     */
-    public function isShowing():Bool
+    // Check if showing
+    public function isActive():Bool
     {
-        return isVisible;
+        return isShowing;
     }
     
-    // ============================================
-    // CALLBACKS
-    // ============================================
-    
-    private function onLogAdded(entry:DebugLogger.LogEntry):Void
+    // Callback: log added
+    private function onLogAdded(entry:Dynamic):Void
     {
-        logs.push(entry);
-        if (isVisible) {
+        var logData:LogEntryData = {
+            timestamp: entry.timestamp,
+            level: entry.level,
+            message: entry.message,
+            source: entry.source,
+            color: entry.color
+        };
+        logs.push(logData);
+        if (isShowing) {
             updateDisplay();
         }
     }
     
+    // Callback: logs cleared
     private function onLogCleared():Void
     {
         logs = [];
         clearDisplay();
     }
     
-    // ============================================
-    // ACTUALIZACION
-    // ============================================
-    
+    // Update display
     private function updateDisplay():Void
     {
-        // Limpiar textos
+        // Clear texts
         for (text in logTexts) {
             text.text = '';
             text.alpha = 0;
         }
         
-        // Calcular rango de logs a mostrar
+        // Calculate range
         var startIdx = logs.length - maxVisibleLines - scrollOffset;
         var endIdx = logs.length - scrollOffset;
         
         if (startIdx < 0) startIdx = 0;
         if (endIdx > logs.length) endIdx = logs.length;
         
-        // Mostrar logs
+        // Show logs
         var displayIdx = 0;
         for (i in startIdx...endIdx) {
             if (displayIdx >= maxVisibleLines) break;
@@ -266,20 +222,20 @@ class DebugOverlay extends FlxTypedGroup<FlxSprite>
             var entry = logs[i];
             var text = logTexts[displayIdx];
             
-            // Formato: [HH:MM:SS] [LEVEL] mensaje
             var time = formatTimestamp(entry.timestamp);
-            text.text = '[$time] [${entry.level.toUpperCase()}] ${entry.message}';
-            text.color = FlxColor.fromInt(entry.color);
+            text.text = '[' + time + '] [' + entry.level.toUpperCase() + '] ' + entry.message;
+            text.color = entry.color;
             text.alpha = 1;
             
             displayIdx++;
         }
         
-        // Actualizar header
+        // Update header
         var stats = DebugLogger.instance.getStats();
-        headerText.text = 'DEBUG LOG (${stats.total} logs, E:${stats.error} W:${stats.warn})';
+        headerText.text = 'DEBUG LOG (' + stats.total + ' logs, E:' + stats.error + ' W:' + stats.warn + ')';
     }
     
+    // Format timestamp
     private function formatTimestamp(time:Float):String
     {
         var totalSeconds = time;
@@ -292,10 +248,7 @@ class DebugOverlay extends FlxTypedGroup<FlxSprite>
                StringTools.lpad(Std.string(ms), '0', 2);
     }
     
-    // ============================================
-    // DESTRUCCION
-    // ============================================
-    
+    // Destroy
     override public function destroy():Void
     {
         DebugLogger.instance.setOnLogAdded(null);

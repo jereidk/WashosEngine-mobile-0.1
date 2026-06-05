@@ -424,14 +424,20 @@ setLogLevel('trace', false)
 -- Inspect un valor (como print_r en PHP)
 local str = printr(myTable)
 print(str)  -- Muestra estructura completa
+
+-- También puedes usar debugPrint para mostrar en pantalla
+debugPrint('Valor: ' .. tostring(myVariable))
+debugPrint('Tabla completa', 'YELLOW')
 ```
 
 ### Ejemplo Completo
 
 ```lua
 function onCreate()
+    -- Activar debug
     debugMode(true)
     debugSaveToFile(true)
+    
     logInfo('Script iniciado')
 end
 
@@ -439,10 +445,27 @@ function onBeatHit()
     logDebug('Beat: ' .. curBeat)
 end
 
+function onStepHit()
+    if curStep % 16 == 0 then
+        logInfo('Nuevo frase')
+    end
+end
+
+function onSongStart()
+    logInfo('Canción iniciada')
+end
+
 function onEndSong()
+    -- Guardar logs antes de terminar
     saveDebugLog()
     saveErrorLog()
     logInfo('Sesión terminada')
+end
+
+function onDestroy()
+    -- Mostrar stats al cerrar
+    local stats = getDebugStats()
+    debugPrint('Total: ' .. stats.total .. ' errores: ' .. stats.error)
 end
 ```
 
@@ -451,6 +474,25 @@ end
 Los logs se guardan en:
 - `mods/debug/log_TIMESTAMP.txt` - Log completo
 - `mods/debug/log_TIMESTAMP_errors.txt` - Solo errores
+
+Puedes acceder a estos archivos desde un PC conectando el dispositivo o través de un file manager.
+
+### Niveles de Log
+
+| Nivel | Color | Uso |
+|-------|-------|-----|
+| `info` | Verde | Información general |
+| `warn` | Amarillo | Warnings |
+| `error` | Rojo | Errores |
+| `debug` | Cyan | Debug verbose |
+| `trace` | Gris | Trace detallado |
+
+### Notas sobre Android
+
+- Los logs se guardan automáticamente en archivo si `debugSaveToFile(true)`
+- Usa `toggleDebugOverlay()` para ver logs en pantalla
+- Los errores se guardan en `_errors.txt` para revisión posterior
+- En producción, desactiva debug con `debugMode(false)`
 
 ---
 
