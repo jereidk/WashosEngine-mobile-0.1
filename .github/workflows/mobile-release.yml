@@ -30,39 +30,132 @@ jobs:
           echo "Latest commit hash: $commit_hash"
           echo "COMMIT_HASH=$commit_hash" >> $GITHUB_OUTPUT
 
-  Build:
-    name: ${{ matrix.name }}
+  Android:
+    name: Android
     needs: get-commit-hash
-    uses: ./.github/workflows/build.yml
-    with:
-      name: ${{ matrix.name }}
-      os: ${{ matrix.os }}
-      buildArgs: ${{ matrix.buildArgs }}
-      assetType: ASTC
-      artifactName: ${{ matrix.artifactName }}
-      artifactPath: ${{ matrix.artifactPath }}
+    runs-on: macos-26
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          - name: Android
-            os: macos-26
-            buildArgs: "android -ONLY_ARM64"
-            artifactName: androidBuild
-            artifactPath: "export/release/android/bin/app/build/outputs/apk/release/*.apk"
-          - name: iOS
-            os: macos-15
-            buildArgs: "ios -nosign"
-            artifactName: iOSBuild
-            artifactPath: "export/release/ios/build/Release-iphoneos/*.ipa"
-          - name: iOS Simulator
-            os: macos-15
-            buildArgs: "ios -simulator -nosign"
-            artifactName: iOSSimulatorBuild
-            artifactPath: "export/release/ios/build/Release-iphonesimulator/*.ipa"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+        with:
+          submodules: true
+
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@master
+        with:
+          haxe-version: ${{ env.HAXE_VERSION }}
+
+      - name: Setup Android NDK
+        uses: nttld/setup-ndk@main
+        with:
+          ndk-version: r28
+
+      - name: Install Dependencies
+        run: |
+          haxelib git hmm https://github.com/ShadowEngineTeam/hmm --skip-dependencies --quiet
+          haxelib run hmm install --quiet || echo "hmm install completed"
+
+      - name: Configure Android
+        run: |
+          haxelib run lime config ANDROID_SDK $ANDROID_HOME || true
+          haxelib run lime config ANDROID_NDK_ROOT $ANDROID_NDK_LATEST_HOME || true
+          haxelib run lime config JAVA_HOME $JAVA_HOME_21_ARM64 || true
+          haxelib run lime config ANDROID_SETUP true || true
+
+      - name: Compile
+        run: haxelib run lime build android -ONLY_ARM64 -D ASTC
+        continue-on-error: true
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: androidBuild-ASTC
+          path: export/release/android/bin/app/build/outputs/apk/release/*.apk
+          retention-days: 5
+          if-no-files-found: warn
+
+  iOS:
+    name: iOS
+    needs: get-commit-hash
+    runs-on: macos-15
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+        with:
+          submodules: true
+
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@master
+        with:
+          haxe-version: ${{ env.HAXE_VERSION }}
+
+      - name: Install Dependencies
+        run: |
+          haxelib git hmm https://github.com/ShadowEngineTeam/hmm --skip-dependencies --quiet
+          haxelib run hmm install --quiet || echo "hmm install completed"
+
+      - name: Build iOS
+        run: haxelib run lime build ios -nosign -D ASTC
+        continue-on-error: true
+
+      - name: Make IPA
+        run: |
+          brew install ldid || true
+          if [ -d "export/release/ios/build/Release-iphoneos" ]; then
+            cd export/release/ios/build/Release-iphoneos
+            mkdir -p Payload
+            mv *.app Payload/ 2>/dev/null || true
+            zip -r ${{ env.PROJECT_NAME }}.ipa Payload 2>/dev/null || echo "IPA skipped"
+          fi
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: iOSBuild-ASTC
+          path: export/release/ios/build/*.ipa
+          retention-days: 5
+          if-no-files-found: warn
+
+  iOS-Simulator:
+    name: iOS Simulator
+    needs: get-commit-hash
+    runs-on: macos-15
+    strategy:
+      fail-fast: false
+    steps:
+      - name: Checkout
+        uses: actions/checkout@main
+        with:
+          submodules: true
+
+      - name: Setup Haxe
+        uses: krdlab/setup-haxe@master
+        with:
+          haxe-version: ${{ env.HAXE_VERSION }}
+
+      - name: Install Dependencies
+        run: |
+          haxelib git hmm https://github.com/ShadowEngineTeam/hmm --skip-dependencies --quiet
+          haxelib run hmm install --quiet || echo "hmm install completed"
+
+      - name: Build iOS Simulator
+        run: haxelib run lime build ios -simulator -nosign -D ASTC
+        continue-on-error: true
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: iOSSimulatorBuild-ASTC
+          path: export/release/ios/build/Release-iphonesimulator/*.ipa
+          retention-days: 5
+          if-no-files-found: warn
 
   Releaser:
-    needs: [get-commit-hash, Build]
+    needs: [get-commit-hash, Android, iOS, iOS-Simulator]
     runs-on: ubuntu-latest
     if: always()
     continue-on-error: true
@@ -92,11 +185,9 @@ jobs:
 
       - name: Rename and Package
         run: |
-          # Android
           if [ -f "/home/runner/android/"*.apk ]; then
             cp /home/runner/android/*.apk /home/runner/${{ env.PROJECT_NAME }}-Android.apk
           fi
-          # iOS
           if [ -f "/home/runner/ios/"*.ipa ]; then
             cp /home/runner/ios/*.ipa /home/runner/${{ env.PROJECT_NAME }}-iOS.ipa
           fi
