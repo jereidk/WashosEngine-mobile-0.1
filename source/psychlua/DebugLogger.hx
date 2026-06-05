@@ -148,6 +148,9 @@ class DebugLogger
         
         log('info', 'DebugLogger inicializado');
         log('info', 'Log file: $logFilePath');
+        
+        // Inicializar interceptor de traces
+        initTraceInterceptor();
     }
     
     /**
@@ -522,6 +525,52 @@ class DebugLogger
         
         if (fields.length == 0) return '{}';
         return '{\n$pad  ' + fields.join(',\n$pad  ') + '\n$pad}';
+    }
+    
+    // ============================================
+    // TRACE INTERCEPTOR
+    // ============================================
+    
+    /**
+     * Initialize trace interceptor to capture all Haxe traces
+     * Esto permite que trace() en source/ se capture en DebugLogger
+     */
+    public function initTraceInterceptor():Void
+    {
+        #if (debug || IRIS_DEBUG)
+        // Solo en builds de debug
+        haxe.Log.trace = function(message:Dynamic, ?info:haxe.PosInfos):Void
+        {
+            var msg = Std.string(message);
+            
+            // Agregar info de posición si está disponible
+            if (info != null && info.customParams != null) {
+                for (param in info.customParams) {
+                    msg += ', ' + Std.string(param);
+                }
+            }
+            
+            // Detectar nivel basado en la posición
+            var level = 'info';
+            if (info != null) {
+                // Si el archivo contiene "Error" o "error", es un error
+                if (info.fileName != null && 
+                    (info.fileName.toLowerCase().indexOf('error') >= 0 || 
+                     info.fileName.toLowerCase().indexOf('err') >= 0)) {
+                    level = 'error';
+                }
+            }
+            
+            // Log con información de posición
+            var source = info != null ? '${info.fileName}:${info.lineNumber}' : null;
+            log(level, msg, source);
+            
+            // También usar el trace original para desarrollo
+            #if debug
+            Sys.println('[' + info.fileName + ':' + info.lineNumber + '] ' + msg);
+            #end
+        };
+        #end
     }
     
     // ============================================

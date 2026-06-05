@@ -487,12 +487,29 @@ Puedes acceder a estos archivos desde un PC conectando el dispositivo o través 
 | `debug` | Cyan | Debug verbose |
 | `trace` | Gris | Trace detallado |
 
+### Captura de Traces desde Source (.hx)
+
+El DebugLogger también captura los `trace()` puestos en el código Haxe:
+
+```haxe
+// En source/Character.hx
+trace('Error loading character: ' + e);  // Se captura automáticamente
+
+// En source/objects/Alphabet.hx  
+trace('Reloaded letters successfully!');  // Se captura automáticamente
+```
+
+Los traces se redirigen a DebugLogger con:
+- El mensaje original
+- La fuente: `nombreArchivo.hx:numeroLinea`
+- Nivel automático (error si el archivo tiene "error" en el nombre)
+
 ### Notas sobre Android
 
-- Los logs se guardan automáticamente en archivo si `debugSaveToFile(true)`
-- Usa `toggleDebugOverlay()` para ver logs en pantalla
-- Los errores se guardan en `_errors.txt` para revisión posterior
-- En producción, desactiva debug con `debugMode(false)`
+- Los `trace()` de Haxe en Android se muestran en Logcat
+- Con DebugLogger, los traces también se guardan en archivo
+- El interceptor de traces funciona en builds DEBUG
+- En builds release, los traces se omiten por defecto de Haxe
 
 ---
 
