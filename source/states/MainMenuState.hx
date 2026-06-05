@@ -9,8 +9,11 @@ import flixel.text.FlxText;
 import flixel.util.FlxColor;
 import flixel.math.FlxMath;
 import flixel.group.FlxGroup;
+import flixel.effects.FlxFlicker;
+import flixel.graphics.FlxGraphic;
 import options.OptionsState;
 import lime.app.Application;
+import states.editors.MasterEditorMenu;
 
 enum MainMenuColumn {
     CENTER;
@@ -333,7 +336,7 @@ class WebiSpooky extends FlxGroup
     var armLeft:FlxSprite;
     var armRight:FlxSprite;
 
-    public function new(x:Float, y:Float, imgAsset:String)
+    public function new(x:Float, y:Float, imgAsset:FlxGraphic)
     {
         super();
         posX = x;

@@ -114,7 +114,7 @@ class LoadingState extends MusicBeatState
 		if(Mods.currentModDirectory != null && Mods.currentModDirectory.trim().length > 0)
 		{
 			var scriptPath:String = 'mods/${Mods.currentModDirectory}/data/LoadingScreen.hx'; //mods/My-Mod/data/LoadingScreen.hx
-			if(SysFileSystem.exists(scriptPath))
+			if(FileSystem.exists(scriptPath))
 			{
 				try
 				{
@@ -488,7 +488,7 @@ class LoadingState extends MusicBeatState
 
 				#if MODS_ALLOWED
 				var moddyFile:String = Paths.modsJson('$folder/preload');
-				if (SysFileSystem.exists(moddyFile)) json = Json.parse(SysFile.getContent(moddyFile));
+				if (FileSystem.exists(moddyFile)) json = Json.parse(SysFile.getContent(moddyFile));
 				else json = Json.parse(SysFile.getContent(path));
 				#else
 				json = Json.parse(Assets.getText(path));
@@ -753,7 +753,7 @@ class LoadingState extends MusicBeatState
 			img = img.trim();
 			#if flxanimate
 			var animToFind:String = Paths.getPath('images/$img/Animation.json', TEXT);
-			if (#if MODS_ALLOWED SysFileSystem.exists(animToFind) || #end Assets.exists(animToFind))
+			if (#if MODS_ALLOWED FileSystem.exists(animToFind) || #end Assets.exists(animToFind))
 				isAnimateAtlas = true;
 			#end
 
@@ -803,7 +803,7 @@ class LoadingState extends MusicBeatState
 		//trace('precaching sound: $file');
 		if(!Paths.currentTrackedSounds.exists(file))
 		{
-			if (#if sys SysFileSystem.exists(file) || #end OpenFlAssets.exists(file, SOUND))
+			if (#if sys FileSystem.exists(file) || #end OpenFlAssets.exists(file, SOUND))
 			{
 				var sound:Sound = #if sys Sound.fromFile(file) #else OpenFlAssets.getSound(file, false) #end;
 				#if (cpp || java)
@@ -843,7 +843,7 @@ class LoadingState extends MusicBeatState
 			if (!Paths.currentTrackedAssets.exists(requestKey))
 			{
 				var file:String = Paths.getPath(requestKey, IMAGE);
-				if (#if sys SysFileSystem.exists(file) || #end OpenFlAssets.exists(file, IMAGE))
+				if (#if sys FileSystem.exists(file) || #end OpenFlAssets.exists(file, IMAGE))
 				{
 					#if sys
 					var bitmap:BitmapData = BitmapData.fromFile(file);
