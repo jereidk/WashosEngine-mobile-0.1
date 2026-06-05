@@ -324,12 +324,141 @@ end)
 5. **Usa `isA()` para type checking** - Evita errores de tipo
 6. **Debug mode** - Actívalo para ver mensajes de error detallados
 
+## Sistema de Debug para Android
+
+El engine incluye un sistema de debug completo que funciona en **Android** donde no hay consola.
+
+### Activar Debug Mode
+
+```lua
+-- Activar modo debug
+debugMode(true)
+
+-- Verificar si está activo
+if isDebugMode() then
+    print('Debug activo!')
+end
+```
+
+### Logging
+
+```lua
+-- Log con nivel específico
+debugLog('info', 'Mensaje de información')
+debugLog('warn', 'Atención: algo no está bien')
+debugLog('error', '¡Error crítico!')
+debugLog('debug', 'Debug: valor = ' .. value)
+
+-- Shortcuts rápidos
+logInfo('Info rápido')
+logWarn('Warning rápido')
+logError('Error rápido')
+logDebug('Debug rápido')
+```
+
+### Gestionar Logs
+
+```lua
+-- Obtener todos los logs
+local logs = getDebugLogs()
+for i, log in ipairs(logs) do
+    print('[' .. log.level .. '] ' .. log.message)
+end
+
+-- Obtener últimos 10 logs
+local recent = getDebugLogs(10)
+
+-- Obtener estadísticas
+local stats = getDebugStats()
+print('Total:', stats.total)
+print('Errors:', stats.error)
+print('Warnings:', stats.warn)
+
+-- Limpiar logs
+clearDebugLog()
+```
+
+### Guardar a Archivo
+
+```lua
+-- Activar guardado automático a archivo
+debugSaveToFile(true)
+
+-- Guardar todos los logs ahora
+saveDebugLog()
+
+-- Guardar solo errores
+saveErrorLog()
+```
+
+### Overlay Visual
+
+```lua
+-- Mostrar/ocultar overlay de debug
+toggleDebugOverlay()
+
+-- Mostrar overlay
+showDebugOverlay()
+
+-- Ocultar overlay
+hideDebugOverlay()
+```
+
+### Filtrar por Nivel
+
+```lua
+-- Desactivar logs de debug
+setLogLevel('debug', false)
+
+-- Activar solo errores
+setLogLevel('info', false)
+setLogLevel('warn', false)
+setLogLevel('debug', false)
+setLogLevel('trace', false)
+-- Ahora solo veras errores
+```
+
+### Inspección de Valores
+
+```lua
+-- Inspect un valor (como print_r en PHP)
+local str = printr(myTable)
+print(str)  -- Muestra estructura completa
+```
+
+### Ejemplo Completo
+
+```lua
+function onCreate()
+    debugMode(true)
+    debugSaveToFile(true)
+    logInfo('Script iniciado')
+end
+
+function onBeatHit()
+    logDebug('Beat: ' .. curBeat)
+end
+
+function onEndSong()
+    saveDebugLog()
+    saveErrorLog()
+    logInfo('Sesión terminada')
+end
+```
+
+### Archivos de Log
+
+Los logs se guardan en:
+- `mods/debug/log_TIMESTAMP.txt` - Log completo
+- `mods/debug/log_TIMESTAMP_errors.txt` - Solo errores
+
 ---
 
 ## Commits Recientes
 
+- `46d8a75` - feat: Add DebugLogger system for Android debugging
+- `38fc5e2` - docs: Complete LUA_API.md documentation
 - `a0d1677` - fix: Remove duplicate functions
 - `77e7c61` - feat: Complete rewrite of LuaBridge
-- `b1ca70e` - fix: Resolve Lua function conflicts
 
 **Sistema Lua completo, robusto y sin errores.** 🎮
