@@ -1,46 +1,33 @@
 # WashosEngine Lua API - Perfect Haxe Bridge
 
 Sistema de scripting avanzado con **puente perfecto Lua-Haxe**. 
-Cada elemento de Haxe es accesible desde Lua de forma natural.
+Lua puede acceder a cualquier clase, método y propiedad de Haxe.
 
 ## Filosofía
 
 - Si existe en Haxe, existe en Lua
 - Los tipos nativos se convierten automáticamente
-- Las clases se sienten nativas en Lua (usando metatables)
-- Las llamadas a métodos funcionan idénticamente en ambos idiomas
+- Sin conflictos de nombres entre funciones
+- API limpia y simple
 
 ## Inicio Rápido
 
 ```lua
--- Acceso directo a cualquier clase Haxe
-local Sprite = Haxe.get('flixel.FlxSprite')
-local Color = Haxe.get('flixel.util.FlxColor')
-
--- Crear objetos naturalmente
-local sprite = Haxe.create('flixel.FlxSprite', 100, 200)
-sprite:loadGraphic('assets/image.png')
+-- Crear objetos Haxe
+local sprite = create('flixel.FlxSprite', 100, 200)
 sprite.x = 500
 sprite.alpha = 0.5
 
--- Constantes
-local RED = Haxe.get('flixel.util.FlxColor.RED')
+-- Acceder a propiedades y constantes
+local RED = get('flixel.util.FlxColor.RED')
+local song = get('PlayState.SONG')
 
--- Métodos estáticos
-local path = Haxe.static('backend.Paths', 'mods', 'images')
+-- Llamar métodos
+call('sprite.loadGraphic', 'assets/image.png')
+callStatic('backend.Paths', 'mods', '')
 
 -- Enums
-local LEFT = Haxe.enum('flixel.input.keyboard.FlxKey', 'LEFT')
-
--- Verificación de tipos
-if Haxe.is(sprite, 'flixel.FlxSprite') then
-    print('Es un sprite!')
-end
-
--- Iterar propiedades
-for k, v in pairs(sprite) do
-    print(k, v)
-end
+local LEFT = enum('flixel.input.keyboard.FlxKey', 'LEFT')
 ```
 
 ## Funciones Principales (Haxe.*)
