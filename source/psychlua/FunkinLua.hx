@@ -1572,7 +1572,11 @@ class FunkinLua {
 			LuaUtils.implement(this);
 			ExtendedLuaFunctions.implement(this);
 			
-			
+			// Initialize DebugLogger for Android debugging
+			#if LUA_ALLOWED
+			DebugLogger.instance.init();
+			registerDebugFunctions(lua);
+			#end
 			
 			LuaBridge.instance.init(lua);
 
@@ -1760,6 +1764,99 @@ class FunkinLua {
 		}
 		return (result == 'true');
 	}
+
+	#if LUA_ALLOWED
+	/**
+	 * Register debug functions for Lua scripts
+	 */
+	function registerDebugFunctions(lua:State):Void
+	{
+		// Debug mode control
+		Lua_helper.add_callback(lua, "debugMode", function(enabled:Bool):Void {
+			DebugLogger.instance.setEnabled(enabled);
+		});
+		
+		Lua_helper.add_callback(lua, "isDebugMode", function():Bool {
+			return DebugLogger.instance.enabled;
+		});
+		
+		// Logging functions
+		Lua_helper.add_callback(lua, "debugLog", function(level:String, message:String, ?source:String = null):Void {
+			DebugLogger.instance.log(level, message, source);
+		});
+		
+		Lua_helper.add_callback(lua, "logInfo", function(message:String, ?source:String = null):Void {
+			DebugLogger.instance.info(message, source);
+		});
+		
+		Lua_helper.add_callback(lua, "logWarn", function(message:String, ?source:String = null):Void {
+			DebugLogger.instance.warn(message, source);
+		});
+		
+		Lua_helper.add_callback(lua, "logError", function(message:String, ?source:String = null):Void {
+			DebugLogger.instance.error(message, source);
+		});
+		
+		Lua_helper.add_callback(lua, "logDebug", function(message:String, ?source:String = null):Void {
+			DebugLogger.instance.debug(message, source);
+		});
+		
+		// Log management
+		Lua_helper.add_callback(lua, "clearDebugLog", function():Void {
+			DebugLogger.instance.clear();
+		});
+		
+		Lua_helper.add_callback(lua, "saveDebugLog", function():Bool {
+			return DebugLogger.instance.saveToFile();
+		});
+		
+		Lua_helper.add_callback(lua, "getDebugLogs", function(?count:Int = -1):Array<Dynamic> {
+			var logs = count > 0 ? DebugLogger.instance.getLastLogs(count) : DebugLogger.instance.getLogs();
+			return [for (log in logs) {
+				level: log.level,
+				message: log.message,
+				source: log.source,
+				color: log.color
+			}];
+		});
+		
+		Lua_helper.add_callback(lua, "getDebugStats", function():Dynamic {
+			return DebugLogger.instance.getStats();
+		});
+		
+		// Log level filtering
+		Lua_helper.add_callback(lua, "setLogLevel", function(level:String, enabled:Bool):Void {
+			DebugLogger.instance.setLogLevel(level, enabled);
+		});
+		
+		// Overlay control
+		Lua_helper.add_callback(lua, "toggleDebugOverlay", function():Bool {
+			return DebugLogger.instance.toggleOverlay();
+		});
+		
+		Lua_helper.add_callback(lua, "showDebugOverlay", function():Void {
+			DebugLogger.instance.setShowOverlay(true);
+		});
+		
+		Lua_helper.add_callback(lua, "hideDebugOverlay", function():Void {
+			DebugLogger.instance.setShowOverlay(false);
+		});
+		
+		// File logging
+		Lua_helper.add_callback(lua, "debugSaveToFile", function(enabled:Bool):Void {
+			DebugLogger.instance.setSaveToFile(enabled);
+		});
+		
+		Lua_helper.add_callback(lua, "saveErrorLog", function(?path:String = null):Bool {
+			return DebugLogger.instance.saveErrorsToFile(path);
+		});
+		
+		// Quick log shortcuts (for convenience)
+		Lua_helper.add_callback(lua, "printr", function(value:Dynamic):String {
+			return DebugLogger.instance.inspect(value);
+		});
+	}
+	#end
 
 	function findScript(scriptFile:String, ext:String = '.lua')
 	{
