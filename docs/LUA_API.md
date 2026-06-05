@@ -1,20 +1,338 @@
-# WashosEngine Lua API
+# WashosEngine Lua API - Perfect Haxe Bridge
 
-Sistema de scripting avanzado para modders. Permite acceso directo al código fuente del engine.
+Sistema de scripting avanzado con **puente perfecto Lua-Haxe**. 
+Cada elemento de Haxe es accesible desde Lua de forma natural.
+
+## Filosofía
+
+- Si existe en Haxe, existe en Lua
+- Los tipos nativos se convierten automáticamente
+- Las clases se sienten nativas en Lua (usando metatables)
+- Las llamadas a métodos funcionan idénticamente en ambos idiomas
 
 ## Inicio Rápido
 
 ```lua
--- Obtener ayuda general
-help()
+-- Acceso directo a cualquier clase Haxe
+local Sprite = Haxe.get('flixel.FlxSprite')
+local Color = Haxe.get('flixel.util.FlxColor')
 
--- Listar clases disponibles
-local classes = listClasses()
-print('Clases disponibles:', #classes)
+-- Crear objetos naturalmente
+local sprite = Haxe.create('flixel.FlxSprite', 100, 200)
+sprite:loadGraphic('assets/image.png')
+sprite.x = 500
+sprite.alpha = 0.5
 
--- Obtener ayuda de una clase específica
-help('PlayState')
+-- Constantes
+local RED = Haxe.get('flixel.util.FlxColor.RED')
+
+-- Métodos estáticos
+local path = Haxe.static('backend.Paths', 'mods', 'images')
+
+-- Enums
+local LEFT = Haxe.enum('flixel.input.keyboard.FlxKey', 'LEFT')
+
+-- Verificación de tipos
+if Haxe.is(sprite, 'flixel.FlxSprite') then
+    print('Es un sprite!')
+end
+
+-- Iterar propiedades
+for k, v in pairs(sprite) do
+    print(k, v)
+end
 ```
+
+## Funciones Principales (Haxe.*)
+
+### Creación de Instancias
+
+```lua
+-- Método largo
+local note = Haxe.create('objects.Note', 100, 200, 0)
+
+-- Método corto
+local sprite = create('flixel.FlxSprite', 100, 200)
+
+-- También funciona
+local sprite = new('flixel.FlxSprite', 100, 200)
+```
+
+### Acceso a Valores
+
+```lua
+-- Obtener propiedad (incluye getters)
+local song = Haxe.get('PlayState.SONG')
+local beat = Haxe.get('PlayState.curBeat')
+
+-- Obtener constante
+local RED = Haxe.get('flixel.util.FlxColor.RED')
+local MAX_INT = Haxe.get('haxe.Math.NaN') -- No existe, pero el patrón sí
+
+-- Establecer propiedad (incluye setters)
+Haxe.set('PlayState.storyWeek', 2)
+Haxe.set('PlayState.health', 100)
+```
+
+### Llamadas a Métodos
+
+```lua
+-- Llamar método en objeto
+Haxe.call('sprite.update', 0.016)
+Haxe.call('camera.shake', 0.01, 0.5)
+
+-- Llamar método estático
+Haxe.static('Paths', 'mods', 'images/character')
+Haxe.static('CoolUtil', 'coolTextFile', {'data/list.txt'})
+```
+
+### Sistema de Tipos
+
+```lua
+-- Tipo de un valor
+local type = typeof(someValue)  -- 'Int', 'String', 'flixel.FlxSprite', etc.
+
+-- Verificar tipo
+if isA(sprite, 'flixel.FlxSprite') then
+    print('Es sprite')
+end
+
+-- Casting (para verificación)
+local casted = cast(sprite, 'flixel.FlxSprite')
+```
+
+### Enums
+
+```lua
+-- Obtener valor de enum
+local LEFT = Haxe.enum('flixel.input.keyboard.FlxKey', 'LEFT')
+local EASE_IN = Haxe.enum('flixel.tweens.FlxEase', 'smoothStepIn')
+
+-- Verificar si es enum
+if isEnum(value) then
+    print(value.__enum, value.__ctor)
+end
+
+-- Listar valores de enum
+local keys = Haxe.get('flixel.input.keyboard.FlxKey')
+-- methods('flixel.input.keyboard.FlxKey') muestra los constructores
+```
+
+### Reflexión
+
+```lua
+-- Listar métodos de una clase
+local methods = methods('objects.Note')
+for i, m in ipairs(methods) do
+    print(m)
+end
+
+-- Listar propiedades
+local props = properties('PlayState')
+
+-- Listar estáticos
+local statics = statics('Paths')
+
+-- Listar constantes
+local consts = constants('flixel.util.FlxColor')
+
+-- Verificar herencia
+if inherits('objects.Note', 'flixel.FlxSprite') then
+    print('Note extiende de FlxSprite')
+end
+```
+
+## Atajos Globales
+
+```lua
+-- create - Alias para Haxe.create
+local sprite = create('flixel.FlxSprite', 100, 200)
+
+-- get - Alias para Haxe.get
+local value = get('PlayState.SONG')
+
+-- set - Alias para Haxe.set
+set('PlayState.health', 50)
+
+-- call - Alias para Haxe.call
+call('sprite.update', 0.016)
+
+-- static - Alias para Haxe.static
+local path = static('Paths', 'mods', '')
+
+-- new - Alias para create
+local note = new('objects.Note', 100, 200, 0)
+
+-- typeof - Alias para Haxe.typeof
+local type = typeof(someValue)
+
+-- isA - Alias para Haxe.is
+if isA(obj, 'flixel.FlxSprite') then end
+
+-- cast - Alias para Haxe.cast
+local casted = cast(obj, 'flixel.FlxSprite')
+
+-- enum - Alias para Haxe.enum
+local key = enum('flixel.input.keyboard.FlxKey', 'SPACE')
+
+-- extends - Crear clase extendida
+local MyClass = extends('flixel.FlxSprite', {
+    customMethod = function(self)
+        print('Custom!')
+    end
+})
+```
+
+## Objetos Wrapeados
+
+Cuando creas o accedes a un objeto Haxe, se envuelve en una tabla Lua
+con acceso natural a propiedades y métodos:
+
+```lua
+local sprite = create('flixel.FlxSprite', 100, 200)
+
+-- Acceso a propiedades (usa getters/setters)
+sprite.x = 500
+sprite.y = 300
+sprite.alpha = 0.5
+sprite.angle = 45
+sprite.visible = true
+
+-- Llamadas a métodos con :syntax
+sprite:loadGraphic('assets/image.png')
+sprite:makeGraphic(100, 100, '0xFF0000')
+sprite:setPosition(200, 200)
+sprite:kill()
+sprite:revive()
+sprite:destroy()
+
+-- Iteración de propiedades
+for k, v in pairs(sprite) do
+    print(k, v)
+end
+
+-- Tipo del objeto
+print(sprite.type)  -- 'flixel.FlxSprite'
+
+-- Clonación
+local clone = sprite:clone()
+
+-- Destrucción
+sprite:destroy()
+```
+
+## Tipos Especiales
+
+### FlxColor
+
+```lua
+local color = Haxe.get('flixel.util.FlxColor.RED')
+
+-- Acceso a componentes
+print(color.red, color.green, color.blue, color.alpha)
+print(color.hex)  -- '0xFFFF0000'
+print(color.int)  -- 4294901760
+
+-- Crear desde entero
+local custom = create('flixel.util.FlxColor', 0xFF0000)
+```
+
+### FlxPoint / FlxRect
+
+```lua
+local point = create('flixel.math.FlxPoint', 100, 200)
+print(point.x, point.y)
+
+local rect = create('flixel.math.FlxRect', 0, 0, 100, 50)
+print(rect.x, rect.y, rect.width, rect.height)
+```
+
+### Enums como tablas
+
+```lua
+local ease = enum('flixel.tweens.FlxEase', 'bounceOut')
+
+-- Se convierte a tabla
+print(ease.__enum)    -- 'flixel.tweens.FlxEase'
+print(ease.__ctor)   -- 'bounceOut'
+```
+
+## Ejemplos Prácticos
+
+### Crear Note Personalizado
+
+```lua
+local note = create('objects.Note', 100, 200, 0)
+note:makeGraphic(50, 50, '0xFF0000')
+note.noteType = 'fire'
+-- Añadir a escena
+```
+
+### Modificar Cámara
+
+```lua
+local cam = Haxe.get('FlxG.camera')
+cam:shake(0.01, 0.5)
+cam:flash('0xFFFFFF', 0.2)
+cam.zoom = 1.5
+```
+
+### Tweens Avanzados
+
+```lua
+-- Crear sprite
+local box = create('flixel.FlxSprite', 100, 100)
+box:makeGraphic(100, 100, '0x00FF00')
+
+-- Tween con Haxe
+local tween = box:doTween(1, {x = 400, y = 300}, 2, 'bounceOut')
+
+-- Cancelar si necesario
+tween:cancel()
+```
+
+### Guardar/Cargar Estado
+
+```lua
+-- Guardar
+local saveData = {
+    health = get('PlayState.health'),
+    score = get('PlayState.score'),
+    week = get('PlayState.storyWeek')
+}
+writeFile('mods/myMod/save.json', json.stringify(saveData))
+
+-- Cargar
+local loaded = json.parse(readFile('mods/myMod/save.json'))
+set('PlayState.health', loaded.health)
+```
+
+## Tabla de Equivalencias Haxe -> Lua
+
+| Haxe | Lua |
+|------|-----|
+| `Class.method()` | `static('Class', 'method')` |
+| `instance.method(arg)` | `call('instance.method', arg)` |
+| `instance.property` | `get('instance.property')` |
+| `instance.property = val` | `set('instance.property', val)` |
+| `Class.CONSTANT` | `get('Class.CONSTANT')` |
+| `Enum.Value` | `enum('Enum', 'Value')` |
+| `Type.createInstance(Class, args)` | `create('Class', args)` |
+| `Type.resolveClass(name)` | `Haxe.get('Class')` |
+
+## Notas de Seguridad
+
+- Los objetos creados deben destruirse manualmente si no son añadidos a un grupo
+- No modifiques propiedades de `PlayState` durante `onCreate`
+- Los archivos solo se pueden escribir en `mods/` y directorios permitidos
+- Evita crear objetos en cada frame (cachealos)
+
+## Tips de Rendimiento
+
+1. **Cachea referencias** - No llames `Haxe.get()` en cada frame
+2. **Reusa objetos** - Crea una vez, usa muchas veces
+3. **Destruye objetos** - Libera memoria cuando no los necesites
+4. **Agrupa sprites** - Usa `FlxGroup` en lugar de arrays manuales
 
 ## Funciones Principales
 
