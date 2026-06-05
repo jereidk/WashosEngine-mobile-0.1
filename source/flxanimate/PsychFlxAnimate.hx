@@ -5,6 +5,9 @@ import flixel.system.FlxAssets.FlxGraphicAsset;
 import flxanimate.frames.FlxAnimateFrames;
 import flxanimate.data.AnimationData;
 import flxanimate.FlxAnimate as OriginalFlxAnimate;
+#if sys
+import sys.io.File as SysFile;
+#end
 
 class PsychFlxAnimate extends OriginalFlxAnimate
 {
@@ -16,7 +19,11 @@ class PsychFlxAnimate extends OriginalFlxAnimate
 			var trimmed:String = pathOrStr.trim();
 			trimmed = trimmed.substr(trimmed.length - 5).toLowerCase();
 
-			if(trimmed == '.json') myJson = File.getContent(myJson); //is a path
+			if(trimmed == '.json') {
+				#if sys
+				myJson = SysFile.getContent(myJson);
+				#end
+			}
 			animJson = cast haxe.Json.parse(_removeBOM(myJson));
 		}
 		else animJson = cast myJson;
@@ -29,12 +36,12 @@ class PsychFlxAnimate extends OriginalFlxAnimate
 
 		if(trimmed == '.json') //Path is json
 		{
-			myData = File.getContent(pathOrStr);
+			myData = #if sys SysFile.getContent(pathOrStr) #else pathOrStr #end;
 			isXml = false;
 		}
 		else if (trimmed.substr(1) == '.xml') //Path is xml
 		{
-			myData = File.getContent(pathOrStr);
+			myData = #if sys SysFile.getContent(pathOrStr) #else pathOrStr #end;
 			isXml = true;
 		}
 		myData = _removeBOM(myData);
