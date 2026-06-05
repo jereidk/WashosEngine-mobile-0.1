@@ -1,14 +1,15 @@
 # WashosEngine Lua API - Perfect Haxe Bridge
 
-Sistema de scripting avanzado con **puente perfecto Lua-Haxe**. 
-Lua puede acceder a cualquier clase, método y propiedad de Haxe.
+Sistema de scripting avanzado con **puente perfecto Lua-Haxe**.
+Lua puede acceder a cualquier clase, método y propiedad de Haxe de forma natural.
 
 ## Filosofía
 
-- Si existe en Haxe, existe en Lua
-- Los tipos nativos se convierten automáticamente
-- Sin conflictos de nombres entre funciones
-- API limpia y simple
+- **Si existe en Haxe, existe en Lua** - Sin limitaciones
+- **Tipos nativos se convierten automáticamente** - Sin wrappers manuales
+- **API limpia y sin conflictos** - Cada función tiene nombre único
+- **Manejo de errores robusto** - Debug mode y logging
+- **Completamente tipado** - Type checking con `isA()`
 
 ## Inicio Rápido
 
@@ -28,254 +29,237 @@ callStatic('backend.Paths', 'mods', '')
 
 -- Enums
 local LEFT = enum('flixel.input.keyboard.FlxKey', 'LEFT')
+
+-- Verificación de tipos
+if isA(sprite, 'flixel.FlxSprite') then
+    print('Es un sprite!')
+end
 ```
 
-## Funciones Principales (Haxe.*)
+## Tabla Haxe
+
+La tabla `Haxe.*` proporciona acceso centralizado a todas las funciones:
+
+```lua
+-- Creación
+Haxe.create('flixel.FlxSprite', 100, 200)
+Haxe.new('objects.Note', 100, 200, 0)
+
+-- Propiedades
+Haxe.get('PlayState.SONG')
+Haxe.set('PlayState.health', 100)
+
+-- Métodos
+Haxe.call('sprite.update', 0.016)
+Haxe.static('Paths', 'mods', '')
+
+-- Tipos
+Haxe.typeof(someValue)  -- 'Int', 'String', 'flixel.FlxSprite', etc.
+Haxe.is(someValue, 'flixel.FlxSprite')  -- true/false
+
+-- Enums
+Haxe.enum('flixel.tweens.FlxEase', 'bounceOut')
+
+-- Reflexión
+Haxe.methods('objects.Note')
+Haxe.properties('PlayState')
+Haxe.statics('Paths')
+```
+
+---
+
+## Funciones LuaBridge
 
 ### Creación de Instancias
 
-```lua
--- Método largo
-local note = Haxe.create('objects.Note', 100, 200, 0)
+| Función | Descripción | Ejemplo |
+|---------|-------------|---------|
+| `create(class, args)` | Crear objeto Haxe | `create('FlxSprite', 100, 200)` |
+| `new(class, args)` | Alias de create | `new('Note', 100, 200, 0)` |
+| `instantiate(class, args)` | Alias de create | `instantiate('FlxText', 0, 0)` |
 
--- Método corto
-local sprite = create('flixel.FlxSprite', 100, 200)
+### Acceso a Propiedades
 
--- También funciona
-local sprite = new('flixel.FlxSprite', 100, 200)
-```
-
-### Acceso a Valores
-
-```lua
--- Obtener propiedad (incluye getters)
-local song = Haxe.get('PlayState.SONG')
-local beat = Haxe.get('PlayState.curBeat')
-
--- Obtener constante
-local RED = Haxe.get('flixel.util.FlxColor.RED')
-local MAX_INT = Haxe.get('haxe.Math.NaN') -- No existe, pero el patrón sí
-
--- Establecer propiedad (incluye setters)
-Haxe.set('PlayState.storyWeek', 2)
-Haxe.set('PlayState.health', 100)
-```
+| Función | Descripción | Ejemplo |
+|---------|-------------|---------|
+| `get(path)` | Obtener valor por ruta | `get('PlayState.SONG')` |
+| `set(path, value)` | Establecer valor | `set('sprite.x', 500)` |
+| `getProperty(obj, prop)` | Obtener propiedad | `getProperty(sprite, 'x')` |
+| `setProperty(obj, prop, val)` | Establecer propiedad | `setProperty(sprite, 'alpha', 0.5)` |
 
 ### Llamadas a Métodos
 
-```lua
--- Llamar método en objeto
-Haxe.call('sprite.update', 0.016)
-Haxe.call('camera.shake', 0.01, 0.5)
-
--- Llamar método estático
-Haxe.static('Paths', 'mods', 'images/character')
-Haxe.static('CoolUtil', 'coolTextFile', {'data/list.txt'})
-```
+| Función | Descripción | Ejemplo |
+|---------|-------------|---------|
+| `call(path, args)` | Llamar método por ruta | `call('sprite.loadGraphic', 'img.png')` |
+| `callStatic(class, method, args)` | Método estático | `callStatic('Paths', 'mods', '')` |
+| `callMethod(obj, method, args)` | Llamar método | `callMethod(sprite, 'update', [0.016])` |
 
 ### Sistema de Tipos
 
-```lua
--- Tipo de un valor
-local type = typeof(someValue)  -- 'Int', 'String', 'flixel.FlxSprite', etc.
-
--- Verificar tipo
-if isA(sprite, 'flixel.FlxSprite') then
-    print('Es sprite')
-end
-
--- Casting (para verificación)
-local casted = cast(sprite, 'flixel.FlxSprite')
-```
+| Función | Descripción | Ejemplo |
+|---------|-------------|---------|
+| `typeof(value)` | Tipo del valor | `typeof(42)` → `'Int'` |
+| `isA(value, class)` | Verificar tipo | `isA(sprite, 'FlxSprite')` |
+| `isNull(value)` | Es null? | `isNull(x)` → `true/false` |
+| `isNumber(value)` | Es número? | `isNumber(3.14)` |
+| `isString(value)` | Es string? | `isString('hello')` |
+| `isArray(value)` | Es array? | `isArray({1,2,3})` |
+| `isFunction(value)` | Es función? | `isFunction(fn)` |
+| `cast(value, class)` | Cast (verificación) | `cast(x, 'Int')` |
+| `classOf(obj)` | Nombre de clase | `classOf(sprite)` → `'flixel.FlxSprite'` |
 
 ### Enums
 
-```lua
--- Obtener valor de enum
-local LEFT = Haxe.enum('flixel.input.keyboard.FlxKey', 'LEFT')
-local EASE_IN = Haxe.enum('flixel.tweens.FlxEase', 'smoothStepIn')
+| Función | Descripción | Ejemplo |
+|---------|-------------|---------|
+| `enum(enumPath, value)` | Valor de enum | `enum('FlxEase', 'bounceOut')` |
+| `enumParams(enumValue)` | Parámetros | `enumParams(myEnum)` → `{param1, param2}` |
+| `enumName(enumValue)` | Nombre del constructor | `enumName(myEnum)` → `'bounceOut'` |
 
--- Verificar si es enum
-if isEnum(value) then
-    print(value.__enum, value.__ctor)
-end
+### Reflexión de Clases
 
--- Listar valores de enum
-local keys = Haxe.get('flixel.input.keyboard.FlxKey')
--- methods('flixel.input.keyboard.FlxKey') muestra los constructores
-```
+| Función | Descripción | Ejemplo |
+|---------|-------------|---------|
+| `methods(classPath)` | Métodos de clase | `methods('FlxSprite')` → `['loadGraphic', ...]` |
+| `properties(classPath)` | Propiedades | `properties('PlayState')` → `['SONG', 'health', ...]` |
+| `statics(classPath)` | Campos estáticos | `statics('Paths')` → `['mods', 'images', ...]` |
+| `constants(classPath)` | Constantes | `constants('FlxColor')` → `{name: 'RED', value: ...}` |
+| `inherits(class, parent)` | Herencia | `inherits('Note', 'FlxSprite')` → `true` |
+| `classExists(path)` | Existe clase? | `classExists('flixel.FlxSprite')` |
+| `enumExists(path)` | Existe enum? | `enumExists('FlxKey')` |
+| `isInterface(path)` | Es interface? | `isInterface('IMyInterface')` |
+| `typeInfo(path)` | Info completa | `typeInfo('FlxSprite')` → `{methods:[], ...}` |
 
-### Reflexión
+### Operaciones de Objetos
 
-```lua
--- Listar métodos de una clase
-local methods = methods('objects.Note')
-for i, m in ipairs(methods) do
-    print(m)
-end
+| Función | Descripción | Ejemplo |
+|---------|-------------|---------|
+| `clone(obj)` | Clonar objeto | `clone(sprite)` |
+| `destroy(obj)` | Destruir objeto | `destroy(sprite)` |
+| `exists(obj)` | No es null? | `exists(sprite)` |
+| `keys(obj)` | Llaves del objeto | `keys(sprite)` → `['x', 'y', 'alpha', ...]` |
+| `values(obj)` | Valores | `values(sprite)` → `{100, 200, 0.5, ...}` |
+| `pairs(obj)` | Pares key-value | `pairs(sprite)` → `{{key:'x', value:100}, ...}` |
+| `hasProperty(obj, prop)` | Tiene propiedad? | `hasProperty(sprite, 'x')` |
+| `hasMethod(obj, method)` | Tiene método? | `hasMethod(sprite, 'loadGraphic')` |
+| `toString(obj)` | String del objeto | `toString(sprite)` → `'flixel.FlxSprite'` |
+| `repr(value)` | Representación | `repr(42)` → `'42'` |
 
--- Listar propiedades
-local props = properties('PlayState')
+### Utilidades
 
--- Listar estáticos
-local statics = statics('Paths')
+| Función | Descripción | Ejemplo |
+|---------|-------------|---------|
+| `inspect(value, depth)` | Inspección profunda | `inspect(myTable, 3)` |
+| `dump(value)` | Dump formateado | `dump(sprite)` |
+| `debug(msg)` | Mensaje debug | `debug('value: ' .. x)` |
+| `trace(value)` | Print con trace | `trace(myValue)` |
+| `error(msg)` | Mensaje error | `error('Algo salió mal')` |
+| `noop()` | No operation | `noop()` → `null` |
+| `identity(value)` | Retorna valor | `identity(x)` → `x` |
 
--- Listar constantes
-local consts = constants('flixel.util.FlxColor')
+---
 
--- Verificar herencia
-if inherits('objects.Note', 'flixel.FlxSprite') then
-    print('Note extiende de FlxSprite')
-end
-```
+## Funciones ExtendedLuaFunctions
 
-## Atajos Globales
+### Object Factory
 
-```lua
--- create - Alias para Haxe.create
-local sprite = create('flixel.FlxSprite', 100, 200)
+| Función | Descripción | Ejemplo |
+|---------|-------------|---------|
+| `makeSprite(name, graphic, x, y)` | Crear sprite | `makeSprite('player', 'player.png', 100, 200)` |
+| `makeAnimatedSprite(name, graphic, x, y, w, h, frames)` | Sprite animado | `makeAnimatedSprite('hero', 'hero.png', 0, 0, 100, 100, {0,1,2})` |
+| `getSprite(name)` | Obtener sprite por nombre | `getSprite('player')` |
+| `removeSprite(name)` | Eliminar sprite | `removeSprite('player')` |
 
--- get - Alias para Haxe.get
-local value = get('PlayState.SONG')
+### Tweens
 
--- set - Alias para Haxe.set
-set('PlayState.health', 50)
+| Función | Descripción | Ejemplo |
+|---------|-------------|---------|
+| `tweenSprite(obj, props, duration, ease, cb)` | Tween en sprite | `tweenSprite('player', {x=500}, 1, 'bounceOut')` |
+| `tweenCameraShake(intensity, duration, cb)` | Shake cámara | `tweenCameraShake(0.01, 0.5)` |
+| `tweenProperty(obj, prop, target, duration, ease, cb)` | Tween propiedad | `tweenProperty('player', 'alpha', 0, 1)` |
 
--- call - Alias para Haxe.call
-call('sprite.update', 0.016)
+### Callbacks
 
--- static - Alias para Haxe.static
-local path = static('Paths', 'mods', '')
+| Función | Descripción | Ejemplo |
+|---------|-------------|---------|
+| `registerCallback(name, func)` | Registrar callback | `registerCallback('onHit', function() end)` |
+| `fireCallback(name, args)` | Llamar callback | `fireCallback('onHit', {damage})` |
+| `unregisterCallback(name)` | Eliminar callback | `unregisterCallback('onHit')` |
 
--- new - Alias para create
-local note = new('objects.Note', 100, 200, 0)
+### Arrays
 
--- typeof - Alias para Haxe.typeof
-local type = typeof(someValue)
+| Función | Descripción | Ejemplo |
+|---------|-------------|---------|
+| `arrayMap(arr, fn)` | Map | `arrayMap({1,2,3}, function(x) return x*2 end)` |
+| `arrayFilter(arr, fn)` | Filter | `arrayFilter({1,2,3}, function(x) return x>1 end)` |
+| `arrayReduce(arr, fn, init)` | Reduce | `arrayReduce({1,2,3}, function(a,b) return a+b end, 0)` |
+| `arrayFind(arr, fn)` | Find | `arrayFind({1,2,3}, function(x) return x==2 end)` |
+| `arrayContains(arr, val)` | Contains | `arrayContains({1,2,3}, 2)` |
+| `arrayClone(arr)` | Clonar array | `arrayClone(myArray)` |
+| `arrayMerge(...)` | Mergear arrays | `arrayMerge({1,2}, {3,4})` |
 
--- isA - Alias para Haxe.is
-if isA(obj, 'flixel.FlxSprite') then end
+### Type Checking (Flixel)
 
--- cast - Alias para Haxe.cast
-local casted = cast(obj, 'flixel.FlxSprite')
+| Función | Descripción | Ejemplo |
+|---------|-------------|---------|
+| `isSprite(obj)` | Es FlxSprite? | `isSprite(sprite)` |
+| `isText(obj)` | Es FlxText? | `isText(text)` |
+| `isGroup(obj)` | Es FlxGroup? | `isGroup(group)` |
+| `isCamera(obj)` | Es FlxCamera? | `isCamera(cam)` |
+| `isTween(obj)` | Es FlxTween? | `isTween(tween)` |
 
--- enum - Alias para Haxe.enum
-local key = enum('flixel.input.keyboard.FlxKey', 'SPACE')
+### Utilidades Matemáticas
 
--- extends - Crear clase extendida
-local MyClass = extends('flixel.FlxSprite', {
-    customMethod = function(self)
-        print('Custom!')
-    end
-})
-```
+| Función | Descripción | Ejemplo |
+|---------|-------------|---------|
+| `lerp(a, b, t)` | Interpolación | `lerp(0, 100, 0.5)` → `50` |
+| `clampValue(v, min, max)` | Clamp | `clampValue(150, 0, 100)` → `100` |
+| `randomFloat(min, max)` | Float aleatorio | `randomFloat(0, 1)` |
+| `randomInt(min, max)` | Int aleatorio | `randomInt(1, 6)` |
+| `randomPick(arr)` | Elemento aleatorio | `randomPick({a,b,c})` |
+| `shuffleArray(arr)` | Mezclar | `shuffleArray({1,2,3})` |
+| `distance2D(x1, y1, x2, y2)` | Distancia | `distance2D(0, 0, 3, 4)` → `5` |
+| `angle2D(x1, y1, x2, y2)` | Ángulo | `angle2D(0, 0, 1, 0)` → `0` |
+| `roundTo(val, decimals)` | Redondear | `roundTo(3.14159, 2)` → `3.14` |
+| `formatTime(seconds)` | Formato tiempo | `formatTime(125)` → `'02:05.00'` |
 
-## Objetos Wrapeados
+### Archivos
 
-Cuando creas o accedes a un objeto Haxe, se envuelve en una tabla Lua
-con acceso natural a propiedades y métodos:
+| Función | Descripción | Ejemplo |
+|---------|-------------|---------|
+| `fileExists(path)` | Existe archivo? | `fileExists('data/config.txt')` |
+| `readTextFile(path)` | Leer archivo | `readTextFile('data/song.txt')` |
+| `writeTextFile(path, content)` | Escribir archivo | `writeTextFile('save.txt', 'data')` |
+| `appendTextFile(path, content)` | Append a archivo | `appendTextFile('log.txt', 'line\n')` |
+| `listDirectory(dir)` | Listar directorio | `listDirectory('mods/')` |
+| `isDir(path)` | Es directorio? | `isDir('mods/')` |
 
-```lua
-local sprite = create('flixel.FlxSprite', 100, 200)
-
--- Acceso a propiedades (usa getters/setters)
-sprite.x = 500
-sprite.y = 300
-sprite.alpha = 0.5
-sprite.angle = 45
-sprite.visible = true
-
--- Llamadas a métodos con :syntax
-sprite:loadGraphic('assets/image.png')
-sprite:makeGraphic(100, 100, '0xFF0000')
-sprite:setPosition(200, 200)
-sprite:kill()
-sprite:revive()
-sprite:destroy()
-
--- Iteración de propiedades
-for k, v in pairs(sprite) do
-    print(k, v)
-end
-
--- Tipo del objeto
-print(sprite.type)  -- 'flixel.FlxSprite'
-
--- Clonación
-local clone = sprite:clone()
-
--- Destrucción
-sprite:destroy()
-```
-
-## Tipos Especiales
-
-### FlxColor
-
-```lua
-local color = Haxe.get('flixel.util.FlxColor.RED')
-
--- Acceso a componentes
-print(color.red, color.green, color.blue, color.alpha)
-print(color.hex)  -- '0xFFFF0000'
-print(color.int)  -- 4294901760
-
--- Crear desde entero
-local custom = create('flixel.util.FlxColor', 0xFF0000)
-```
-
-### FlxPoint / FlxRect
-
-```lua
-local point = create('flixel.math.FlxPoint', 100, 200)
-print(point.x, point.y)
-
-local rect = create('flixel.math.FlxRect', 0, 0, 100, 50)
-print(rect.x, rect.y, rect.width, rect.height)
-```
-
-### Enums como tablas
-
-```lua
-local ease = enum('flixel.tweens.FlxEase', 'bounceOut')
-
--- Se convierte a tabla
-print(ease.__enum)    -- 'flixel.tweens.FlxEase'
-print(ease.__ctor)   -- 'bounceOut'
-```
+---
 
 ## Ejemplos Prácticos
 
 ### Crear Note Personalizado
 
 ```lua
+-- Crear sprite
 local note = create('objects.Note', 100, 200, 0)
-note:makeGraphic(50, 50, '0xFF0000')
-note.noteType = 'fire'
--- Añadir a escena
+note:makeGraphic(50, 50, get('flixel.util.FlxColor.RED'))
+
+-- Añadir a grupo
+local notes = get('PlayState.notes')
+if notes then
+    notes:add(note)
+end
 ```
 
 ### Modificar Cámara
 
 ```lua
-local cam = Haxe.get('FlxG.camera')
+local cam = get('FlxG.camera')
 cam:shake(0.01, 0.5)
-cam:flash('0xFFFFFF', 0.2)
+cam:flash(get('flixel.util.FlxColor.WHITE'), 0.2)
 cam.zoom = 1.5
-```
-
-### Tweens Avanzados
-
-```lua
--- Crear sprite
-local box = create('flixel.FlxSprite', 100, 100)
-box:makeGraphic(100, 100, '0x00FF00')
-
--- Tween con Haxe
-local tween = box:doTween(1, {x = 400, y = 300}, 2, 'bounceOut')
-
--- Cancelar si necesario
-tween:cancel()
 ```
 
 ### Guardar/Cargar Estado
@@ -287,25 +271,42 @@ local saveData = {
     score = get('PlayState.score'),
     week = get('PlayState.storyWeek')
 }
-writeFile('mods/myMod/save.json', json.stringify(saveData))
+writeTextFile('mods/myMod/save.json', json.stringify(saveData))
 
 -- Cargar
-local loaded = json.parse(readFile('mods/myMod/save.json'))
+local loaded = json.parse(readTextFile('mods/myMod/save.json'))
 set('PlayState.health', loaded.health)
 ```
 
-## Tabla de Equivalencias Haxe -> Lua
+### Tweens Avanzados
+
+```lua
+-- Sprite con tween
+local box = makeSprite('box', 'box.png', 100, 100)
+tweenSprite('box', {x = 500, alpha = 0}, 2, 'bounceOut', function()
+    removeSprite('box')
+end)
+```
+
+---
+
+## Tabla de Equivalencias
 
 | Haxe | Lua |
 |------|-----|
-| `Class.method()` | `static('Class', 'method')` |
+| `Class.method()` | `callStatic('Class', 'method')` |
 | `instance.method(arg)` | `call('instance.method', arg)` |
 | `instance.property` | `get('instance.property')` |
 | `instance.property = val` | `set('instance.property', val)` |
 | `Class.CONSTANT` | `get('Class.CONSTANT')` |
 | `Enum.Value` | `enum('Enum', 'Value')` |
 | `Type.createInstance(Class, args)` | `create('Class', args)` |
-| `Type.resolveClass(name)` | `Haxe.get('Class')` |
+| `Type.resolveClass(name)` | `classExists('Class')` |
+| `Type.getClass(obj)` | `classOf(obj)` |
+| `Std.is(obj, Class)` | `isA(obj, 'Class')` |
+| `Type.typeof(value)` | `typeof(value)` |
+
+---
 
 ## Notas de Seguridad
 
@@ -316,294 +317,19 @@ set('PlayState.health', loaded.health)
 
 ## Tips de Rendimiento
 
-1. **Cachea referencias** - No llames `Haxe.get()` en cada frame
+1. **Cachea referencias** - No llames `get()` en cada frame
 2. **Reusa objetos** - Crea una vez, usa muchas veces
 3. **Destruye objetos** - Libera memoria cuando no los necesites
 4. **Agrupa sprites** - Usa `FlxGroup` en lugar de arrays manuales
+5. **Usa `isA()` para type checking** - Evita errores de tipo
+6. **Debug mode** - Actívalo para ver mensajes de error detallados
 
-## Funciones Principales
+---
 
-### Acceso a Propiedades
+## Commits Recientes
 
-```lua
--- Obtener propiedad directamente
-local song = getPropertyDirect('PlayState.SONG')
-local beat = getPropertyDirect('PlayState.curBeat')
+- `a0d1677` - fix: Remove duplicate functions
+- `77e7c61` - feat: Complete rewrite of LuaBridge
+- `b1ca70e` - fix: Resolve Lua function conflicts
 
--- Establecer propiedad directamente
-setPropertyDirect('PlayState.storyWeek', 2)
-setPropertyDirect('PlayState.health', 100)
-
--- Usar notación de puntos
-getProperty('PlayState.SONG.notes[0].type')
-setProperty('PlayState.time', 30.5)
-```
-
-### Llamadas a Métodos
-
-```lua
--- Llamar método en objeto
-callMethod('playerStrums', 'update', {dt})
-
--- Llamar método estático
-callStatic('Paths', 'mods', 'images/character')
-callStatic('CoolUtil', 'coolTextFile', {'data/list.txt'})
-
--- Llamar con múltiples argumentos
-callMethod('healthBar', 'updateBar', {1.0, 100})
-```
-
-### Creación de Instancias
-
-```lua
--- Crear objeto Note
-local note = new('objects.Note', 100, 200, 0)
-note:kill()
-
--- Crear sprite con imagen
-local spr = makeObject('mySprite', 'assets/images/character.png', 100, 200)
-
--- Crear sprite animado
-local char = makeAnimatedObject('myChar', 'assets/images/spritemap.png', 100, 200, 100, 100, {0,1,2,3,4})
-char:animation.play('idle')
-```
-
-### Sistema de Hooks
-
-```lua
--- Hook a eventos del engine
-onEvent('onBeatHit', function(beat)
-    print('Beat:', beat)
-    if beat % 4 == 0 then
-        -- Cada 4 beats
-    end
-end)
-
-onEvent('onUpdate', function(dt)
-    -- Cada frame
-end)
-
-onEvent('onNoteHit', function(noteData)
-    print('Hit note:', noteData)
-end)
-
--- Registrar callback personalizado
-registerCallback('myCustomCallback', function(arg1, arg2)
-    print('Callback:', arg1, arg2)
-    return arg1 + arg2
-end)
-
--- Llamar callback
-local result = callCallback('myCustomCallback', {1, 2})
-```
-
-### Reflexión
-
-```lua
--- Listar métodos de una clase
-local methods = listMethods('objects.Note')
-for i, m in ipairs(methods) do
-    print(m)
-end
-
--- Listar propiedades
-local props = listProperties('PlayState')
-for i, p in ipairs(props) do
-    print(p)
-end
-
--- Listar clases con filtro
-local chars = listClasses('character')
-```
-
-### Tweens Avanzados
-
-```lua
--- Tween en objeto
-tweenObject('mySprite', {x = 500, y = 300, alpha = 0}, 2, 'linear')
-
--- Tween con callback
-tweenObject('mySprite', {x = 500}, 2, 'bounceOut', function()
-    print('Completado!')
-end)
-
--- Tween en cámara
-tweenCamera({zoom = 1.5}, 1, 'easeIn')
-
--- Tween de propiedad individual
-tweenProperty('mySprite', 'alpha', 0, 1, 'linear')
-```
-
-### Utilidades
-
-```lua
--- Matemáticas
-local lerped = lerp(a, b, t)
-local clamped = clamp(value, min, max)
-local rand = random(0, 100)
-local randInt = randomInt(1, 10)
-local dist = distance(x1, y1, x2, y2)
-local angle = angle(x1, y1, x2, y2)
-local rounded = round(value, 2)
-
--- Tiempo
-local timeStr = formatTime(125.5)  -- "02:05.50"
-
--- Arrays
-local doubled = tableMap({1,2,3}, function(x) return x * 2 end)
-local filtered = tableFilter({1,2,3,4}, function(x) return x > 2 end)
-local found = tableFind({1,2,3}, function(x) return x == 2 end)
-local has = tableContains({1,2,3}, 2)
-local shuffled = shuffle({1,2,3,4,5})
-```
-
-### Verificación de Tipos
-
-```lua
--- Verificar tipo de objeto
-if isSprite(obj) then
-    obj:kill()
-end
-
-if isGroup(group) then
-    group:clear()
-end
-
--- Verificar tipos básicos
-if isString(val) then print('Es string') end
-if isNumber(val) then print('Es número') end
-if isFunction(func) then print('Es función') end
-if isTable(tbl) then print('Es tabla') end
-
--- Obtener tipo como string
-local type = getType(obj)  -- 'FlxSprite', 'number', etc.
-```
-
-### Operaciones de Archivo
-
-```lua
--- Verificar existencia
-if fileExists('mods/myMod/data.txt') then
-    local content = readFile('mods/myMod/data.txt')
-end
-
--- Escribir archivo
-writeFile('mods/myMod/save.txt', 'data aquí')
-
--- Agregar a archivo
-appendFile('mods/myMod/log.txt', 'nueva línea\n')
-
--- Listar directorio
-local files = listFiles('mods/')
-for i, f in ipairs(files) do
-    print(f)
-end
-
--- Verificar si es directorio
-if isDirectory('mods/myMod') then
-    print('Es directorio')
-end
-```
-
-### Llamar Funciones de Objetos
-
-```lua
--- Guardar objeto
-setVar('myNote', new('objects.Note', 100, 200, 0))
-
--- Llamar método
-objectCall('myNote', 'kill')
-objectCall('myNote', 'setAlpha', {0.5})
-
--- Obtener objeto
-local note = object('myNote')
-note:kill()
-
--- Remover objeto
-removeObject('myNote')
-```
-
-### Inspección de Objetos
-
-```lua
--- Inspeccionar estructura de objeto
-local info = inspect(PlayState.instance)
-print_r(info)
-
--- Ver todas las variables del script
-debugVars()
-```
-
-### Acceso a Clases Estáticas
-
-```lua
--- Obtener referencia a clase
-local PlayState = getClass('states.PlayState')
-local FlxG = getClass('flixel.FlxG')
-
--- Listar estáticos de una clase
-local statics = listStatics('Paths')
-```
-
-## Ejemplos Prácticos
-
-### Crear Note Personalizado
-
-```lua
--- Crear note con propiedades especiales
-local note = new('objects.Note', 100, 200, 0)
-note.noteType = 'fire'
-note:makeGraphic(50, 50, '0xFF0000')
-addObjectToScene(note)
-
--- Apply shader
-setProperty('note.shader', myShader)
-```
-
-### Modificar Salud
-
-```lua
-onEvent('onNoteHit', function(data)
-    if data.noteType == 'heal' then
-        local health = getPropertyDirect('PlayState.health')
-        setPropertyDirect('PlayState.health', health + 10)
-    end
-end)
-```
-
-### Efecto de Cámara
-
-```lua
-onEvent('onBeatHit', function(beat)
-    if beat % 8 == 0 then
-        tweenCamera({shake = 0.01}, 0.2)
-    end
-end)
-```
-
-### Guardar Datos
-
-```lua
--- Guardar estado
-local saveData = {
-    highscore = getPropertyDirect('PlayState.highscore'),
-    unlocked = {'char1', 'char2'}
-}
-writeFile('mods/myMod/save.json', json.stringify(saveData))
-
--- Cargar estado
-local loaded = json.parse(readFile('mods/myMod/save.json'))
-```
-
-## Tips y Trucos
-
-1. **Usa `setVar` para guardar referencias** - Los objetos creados necesitan guardarse
-2. **Los hooks se mantienen entre estados** - Si necesitas limpiarlos, llama `ScriptBridge.reset()`
-3. **Inspecciona con `print_r`** - Para ver qué propiedades tiene un objeto
-4. **Los tweens retornan el Tween** - Puedes cancelarlo con `tween:cancel()`
-
-## Notas de Seguridad
-
-- No modifiques propiedades de `PlayState` directamente durante `onCreate`
-- Usa `callCallback` en lugar de `call` para funciones registradas
-- Los archivos solo se pueden escribir en `mods/` y directorios permitidos
+**Sistema Lua completo, robusto y sin errores.** 🎮
