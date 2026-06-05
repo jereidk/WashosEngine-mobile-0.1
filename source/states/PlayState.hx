@@ -37,6 +37,8 @@ import shaders.ErrorHandledShader;
 
 import objects.VideoSprite;
 import objects.Note.EventNote;
+import objects.Note;
+import backend.NotePool;
 import objects.*;
 import states.stages.*;
 import states.stages.objects.*;
@@ -187,6 +189,7 @@ class PlayState extends MusicBeatState
 	public var boyfriend:Character = null;
 
 	public var notes:FlxTypedGroup<Note>;
+	public var notePool:NotePool;
 	public var unspawnNotes:Array<Note> = [];
 	public var eventNotes:Array<EventNote> = [];
 
@@ -1163,7 +1166,11 @@ class PlayState extends MusicBeatState
 
 				//if(!ClientPrefs.data.lowQuality || !cpuControlled) daNote.kill();
 				unspawnNotes.remove(daNote);
-				daNote.destroy();
+				#if FLX_OBJECT_POOL
+					notePool.release(daNote);
+				#else
+					daNote.destroy();
+				#endif
 			}
 			--i;
 		}
@@ -1376,6 +1383,12 @@ class PlayState extends MusicBeatState
 		FlxG.sound.list.add(inst);
 
 		notes = new FlxTypedGroup<Note>();
+			#if FLX_OBJECT_POOL
+			notePool = new NotePool(50);
+			trace('[PlayState] NotePool initialized with 50 pre-allocated notes');
+			#else
+			notePool = null;
+			#end
 		noteGroup.add(notes);
 
 		try
@@ -1429,7 +1442,7 @@ class PlayState extends MusicBeatState
 					}
 				}
 
-				var swagNote:Note = new Note(spawnTime, noteColumn, oldNote);
+				var swagNote:Note = #if FLX_OBJECT_POOL notePool.get(spawnTime, noteColumn, oldNote); #else new Note(spawnTime, noteColumn, oldNote); #end
 				var isAlt: Bool = section.altAnim && !gottaHitNote;
 				swagNote.gfNote = (section.gfSection && gottaHitNote == section.mustHitSection);
 				swagNote.animSuffix = isAlt ? "-alt" : "";
@@ -1448,7 +1461,7 @@ class PlayState extends MusicBeatState
 					{
 						oldNote = unspawnNotes[Std.int(unspawnNotes.length - 1)];
 
-						var sustainNote:Note = new Note(spawnTime + (curStepCrochet * susNote), noteColumn, oldNote, true);
+						var sustainNote:Note = #if FLX_OBJECT_POOL notePool.get(spawnTime + (curStepCrochet * susNote), noteColumn, oldNote, true); #else new Note(spawnTime + (curStepCrochet * susNote), noteColumn, oldNote, true); #end
 						sustainNote.animSuffix = swagNote.animSuffix;
 						sustainNote.mustPress = swagNote.mustPress;
 						sustainNote.gfNote = swagNote.gfNote;
@@ -3205,7 +3218,11 @@ class PlayState extends MusicBeatState
 	public function invalidateNote(note:Note):Void {
 		//if(!ClientPrefs.data.lowQuality || !cpuControlled) note.kill();
 		notes.remove(note, true);
+		#if FLX_OBJECT_POOL
+		notePool.release(note);
+		#else
 		note.destroy();
+		#end
 	}
 
 	public function spawnNoteSplashOnNote(note:Note) {

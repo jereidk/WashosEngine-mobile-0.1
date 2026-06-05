@@ -21,6 +21,8 @@
 	<define name="COPYSTATE_ALLOWED" if="MODS_ALLOWED mobile"/>
 	<define name="IRIS_DEBUG"/>
 	
+	<define name="FLX_OBJECT_POOL" if="desktop || mobile"/>
+	
 	<define name="MULTITHREADED_LOADING" if="cpp" /> <define name="SHOW_LOADING_SCREEN" />
 	<define name="PSYCH_WATERMARKS"/> <section if="officialBuild">
 		<define name="TITLE_SCREEN_EASTER_EGG"/>
