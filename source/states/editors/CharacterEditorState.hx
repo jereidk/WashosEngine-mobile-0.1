@@ -1,9 +1,14 @@
 package states.editors;
 
 import flixel.graphics.FlxGraphic;
-
-import flixel.system.debug.interaction.tools.Pointer.GraphicCursorCross;
 import flixel.util.FlxDestroyUtil;
+
+// Cursor cross - using graphics instead of embedded class for HTML5 compatibility
+#if html5
+// For HTML5, we'll create the cursor programmatically
+#else
+import flixel.system.debug.interaction.tools.Pointer.GraphicCursorCross;
+#end
 
 import openfl.net.FileReference;
 import openfl.events.Event;
@@ -109,9 +114,15 @@ class CharacterEditorState extends MusicBeatState implements PsychUIEventHandler
 
 		addCharacter();
 
+		#if html5
+		// Create a simple cross cursor for HTML5
+		cameraFollowPointer = new FlxSprite();
+		cameraFollowPointer.makeGraphic(40, 40, FlxColor.WHITE, true);
+		#else
 		cameraFollowPointer = new FlxSprite().loadGraphic(FlxGraphic.fromClass(GraphicCursorCross));
 		cameraFollowPointer.setGraphicSize(40, 40);
 		cameraFollowPointer.updateHitbox();
+		#end
 
 		healthBar = new Bar(30, FlxG.height - 75);
 		healthBar.scrollFactor.set();

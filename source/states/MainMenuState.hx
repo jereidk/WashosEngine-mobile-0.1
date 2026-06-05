@@ -7,7 +7,7 @@ import flixel.tweens.FlxTween;
 import flixel.tweens.FlxEase;
 import flixel.text.FlxText;
 import flixel.util.FlxColor;
-import flixel.util.FlxMath;
+import flixel.math.FlxMath;
 import flixel.group.FlxGroup;
 import options.OptionsState;
 import lime.app.Application;
@@ -25,6 +25,8 @@ typedef MenuOption = {
 class MainMenuState extends MusicBeatState
 {
     public static var washosEngineVersion:String = '0.0.1';
+    public static var psychEngineVersion(get, never):String;
+    private static function get_psychEngineVersion():String return washosEngineVersion;
     public static var curSelected:Int = 0;
     public static var curColumn:MainMenuColumn = CENTER;
 
