@@ -36,6 +36,7 @@ jobs:
     name: Android
     needs: get-commit-hash
     runs-on: macos-15
+    continue-on-error: true
     steps:
       - name: Checkout
         uses: actions/checkout@main
@@ -94,6 +95,7 @@ jobs:
     name: iOS
     needs: get-commit-hash
     runs-on: macos-15
+    continue-on-error: true
     steps:
       - name: Checkout
         uses: actions/checkout@main
@@ -148,6 +150,7 @@ jobs:
     needs: [get-commit-hash, build-android, build-ios]
     runs-on: ubuntu-latest
     if: always()
+    continue-on-error: true
     permissions: write-all
     steps:
       - name: Download Android Build
