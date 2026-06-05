@@ -426,11 +426,31 @@ class Paths
 		#end
 	}
 
+	static var _songPathCache:Map<String, String> = [];
+	static var _cacheHits:Int = 0;
+	static var _cacheMisses:Int = 0;
+	
 	inline static public function formatToSongPath(path:String) {
+		#if debug
+		if (_songPathCache.exists(path)) {
+			_cacheHits++;
+		} else {
+			_cacheMisses++;
+		}
+		#end
+		
+		var cached = _songPathCache.get(path);
+		if (cached != null) return cached;
+		
 		final invalidChars = ~/[~&;:<>#\s]/g;
 		final hideChars = ~/[.,'"%?!]/g;
-
-		return hideChars.replace(invalidChars.replace(path, '-'), '').trim().toLowerCase();
+		var result = hideChars.replace(invalidChars.replace(path, '-'), '').trim().toLowerCase();
+		
+		// Limit cache size to prevent memory issues
+		if (_songPathCache.length < 10000) {
+			_songPathCache.set(path, result);
+		}
+		return result;
 	}
 
 	public static var currentTrackedSounds:Map<String, Sound> = [];

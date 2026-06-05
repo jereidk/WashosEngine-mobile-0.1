@@ -175,11 +175,14 @@ class EventMetaNote extends MetaNote
 		if(events.length == 1)
 		{
 			var event = events[0];
-			eventText.text = 'Event: ${event[0]} ($myTime ms)\nValue 1: ${event[1]}\nValue 2: ${event[2]}';
+			if (event != null && event.length >= 3)
+				eventText.text = 'Event: ${event[0]} ($myTime ms)\nValue 1: ${event[1]}\nValue 2: ${event[2]}';
+			else
+				eventText.text = 'ERROR: Invalid event data';
 		}
 		else if(events.length > 1)
 		{
-			var eventNames:Array<String> = [for (event in events) event[0]];
+			var eventNames:Array<String> = [for (event in events) if (event != null && event.length >= 1) event[0] else '??'];
 			eventText.text = '${events.length} Events ($myTime ms):\n${eventNames.join(', ')}';
 		}
 		else eventText.text = 'ERROR FAILSAFE';

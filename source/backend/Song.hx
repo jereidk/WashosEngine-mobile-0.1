@@ -153,7 +153,16 @@ class Song
 
 	public static function parseJSON(rawData:String, ?nameForError:String = null, ?convertTo:String = 'psych_v1'):SwagSong
 	{
-		var songJson:SwagSong = cast Json.parse(rawData);
+		var songJson:SwagSong;
+		try {
+			songJson = cast Json.parse(rawData);
+		} catch (e:Dynamic) {
+			trace('ERROR: Failed to parse JSON for $nameForError: $e');
+			return null;
+		}
+		
+		if(songJson == null) return null;
+		
 		if(Reflect.hasField(songJson, 'song'))
 		{
 			var subSong:SwagSong = Reflect.field(songJson, 'song');

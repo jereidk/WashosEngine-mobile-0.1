@@ -88,6 +88,37 @@ class PlayState extends MusicBeatState
 		['Sick!', 1], //From 90% to 99%
 		['Perfect!!', 1] //The value on this one isn't used actually, since Perfect is always "1"
 	];
+	
+	// Binary search cache for rating lookup
+	static var _ratingThresholdCache:Array<Float> = null;
+	static var _ratingNameCache:Array<String> = null;
+	
+	static function getRatingNameBinarySearch(percent:Float):String {
+		// Initialize cache on first use
+		if (_ratingThresholdCache == null) {
+			_ratingThresholdCache = [for (i in 0...ratingStuff.length - 1) cast ratingStuff[i][1]];
+			_ratingNameCache = [for (i in 0...ratingStuff.length - 1) cast ratingStuff[i][0]];
+		}
+		
+		// Binary search for the appropriate rating
+		var low:Int = 0;
+		var high:Int = _ratingThresholdCache.length - 1;
+		
+		while (low <= high) {
+			var mid:Int = Std.int((low + high) / 2);
+			if (_ratingThresholdCache[mid] <= percent) {
+				low = mid + 1;
+			} else {
+				high = mid - 1;
+			}
+		}
+		
+		// high is the index of the rating (or -1 if none found)
+		if (high >= 0 && high < _ratingNameCache.length) {
+			return _ratingNameCache[high];
+		}
+		return 'You Suck!';
+	}
 
 	//event variables
 	private var isCameraOnForcedPos:Bool = false;
@@ -3550,15 +3581,8 @@ class PlayState extends MusicBeatState
 				ratingPercent = Math.min(1, Math.max(0, totalNotesHit / totalPlayed));
 				//trace((totalNotesHit / totalPlayed) + ', Total: ' + totalPlayed + ', notes hit: ' + totalNotesHit);
 
-				// Rating Name
-				ratingName = ratingStuff[ratingStuff.length-1][0]; //Uses last string
-				if(ratingPercent < 1)
-					for (i in 0...ratingStuff.length-1)
-						if(ratingPercent < ratingStuff[i][1])
-						{
-							ratingName = ratingStuff[i][0];
-							break;
-						}
+				// Rating Name - using binary search for O(log n) instead of O(n)
+				ratingName = ratingPercent >= 1 ? 'Perfect!!' : getRatingNameBinarySearch(ratingPercent);
 			}
 			fullComboFunction();
 		}
