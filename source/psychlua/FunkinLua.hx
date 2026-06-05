@@ -4,6 +4,8 @@ package psychlua;
 import backend.WeekData;
 import backend.Highscore;
 import backend.Song;
+import backend.Particle;
+import backend.ParticleEmitter;
 
 import openfl.Lib;
 import openfl.utils.Assets;
@@ -11,6 +13,7 @@ import openfl.display.BitmapData;
 import flixel.FlxBasic;
 import flixel.FlxObject;
 import flixel.FlxState;
+import flixel.util.FlxColor;
 
 #if (!flash && sys)
 import flixel.addons.display.FlxRuntimeShader;
@@ -1576,6 +1579,7 @@ class FunkinLua {
 			#if LUA_ALLOWED
 			DebugLogger.instance.init();
 			registerDebugFunctions(lua);
+			registerParticleFunctions(lua);
 			#end
 			
 			LuaBridge.instance.init(lua);
@@ -1855,6 +1859,238 @@ class FunkinLua {
 		Lua_helper.add_callback(lua, "printr", function(value:Dynamic):String {
 			return DebugLogger.instance.inspect(value);
 		});
+	}
+	#end
+	
+	#if LUA_ALLOWED
+	function registerParticleFunctions(lua:State):Void
+	{
+		// Create particle emitter
+		Lua_helper.add_callback(lua, "createParticleEmitter", function(?x:Float = 0, ?y:Float = 0, ?maxParticles:Int = 200):Int {
+			var emitter = new ParticleEmitter(x, y, maxParticles);
+			emitter.cameras = [camHUD]; PlayState.instance.add(emitter); return assignParticleEmitterId(emitter);
+		});
+		
+		// Configure emitter
+		Lua_helper.add_callback(lua, "setEmitterPosition", function(id:Int, x:Float, y:Float):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.setPosition(x, y);
+		});
+		
+		Lua_helper.add_callback(lua, "setEmitterSize", function(id:Int, width:Float, height:Float):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.setSize(width, height);
+		});
+		
+		Lua_helper.add_callback(lua, "setEmitterQuantity", function(id:Int, qty:Int):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.setQuantity(qty);
+		});
+		
+		Lua_helper.add_callback(lua, "setEmitterSpeed", function(id:Int, min:Float, max:Float):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.setSpeed(min, max);
+		});
+		
+		Lua_helper.add_callback(lua, "setEmitterAngle", function(id:Int, min:Float, max:Float):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.setAngle(min, max);
+		});
+		
+		Lua_helper.add_callback(lua, "setEmitterAcceleration", function(id:Int, x:Float, y:Float):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.setAcceleration(x, y);
+		});
+		
+		Lua_helper.add_callback(lua, "setEmitterDrag", function(id:Int, x:Float, y:Float):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.setDrag(x, y);
+		});
+		
+		Lua_helper.add_callback(lua, "setEmitterLifetime", function(id:Int, min:Float, max:Float):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.setLifetime(min, max);
+		});
+		
+		Lua_helper.add_callback(lua, "setEmitterScale", function(id:Int, startMin:Float, startMax:Float, endMin:Float, endMax:Float):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.setScale(startMin, startMax, endMin, endMax);
+		});
+		
+		Lua_helper.add_callback(lua, "setEmitterAlpha", function(id:Int, start:Float, end:Float):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.setAlpha(start, end);
+		});
+		
+		Lua_helper.add_callback(lua, "setEmitterBlend", function(id:Int, blend:String):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.setBlend(blend);
+		});
+		
+		Lua_helper.add_callback(lua, "setEmitterColors", function(id:Int, colors:Array<Int>):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) {
+				var flxColors:Array<FlxColor> = [for (c in colors) FlxColor.createFromRGB(c >> 16 & 0xFF, c >> 8 & 0xFF, c & 0xFF)];
+				emitter.setColors(flxColors);
+			}
+		});
+		
+		Lua_helper.add_callback(lua, "setEmitterGraphic", function(id:Int, sprite:String):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.setParticleSprite(sprite);
+		});
+		
+		Lua_helper.add_callback(lua, "setEmitterCircleGraphic", function(id:Int, size:Int, ?color:Int = 0xFFFFFF):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) {
+				emitter.setParticleGraphic(size, FlxColor.createFromRGB(color >> 16 & 0xFF, color >> 8 & 0xFF, color & 0xFF));
+			}
+		});
+		
+		// Emit particles
+		Lua_helper.add_callback(lua, "emitParticles", function(id:Int, ?qty:Int = -1):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.emit(qty);
+		});
+		
+		Lua_helper.add_callback(lua, "explodeParticles", function(id:Int, ?qty:Int = -1):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.explode(qty);
+		});
+		
+		Lua_helper.add_callback(lua, "startEmitter", function(id:Int, ?frequency:Float = 0.1):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.start(frequency);
+		});
+		
+		Lua_helper.add_callback(lua, "stopEmitter", function(id:Int):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.stop();
+		});
+		
+		Lua_helper.add_callback(lua, "burstParticles", function(id:Int, count:Int):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.burst(count);
+		});
+		
+		Lua_helper.add_callback(lua, "sprayParticles", function(id:Int, angle:Float, spread:Float = 30, count:Int = 10):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.spray(angle, spread, count);
+		});
+		
+		Lua_helper.add_callback(lua, "killEmitter", function(id:Int):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.killAll();
+		});
+		
+		Lua_helper.add_callback(lua, "destroyParticleEmitter", function(id:Int):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) {
+				emitter.killAll();
+				particleEmitters.remove(id);
+			}
+		});
+		
+		Lua_helper.add_callback(lua, "getEmitterStats", function(id:Int):Dynamic {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) return emitter.getStats();
+			return null;
+		});
+		
+		// Quick presets
+		Lua_helper.add_callback(lua, "firework", function(x:Float, y:Float, ?count:Int = 30, ?colors:Array<Int> = null):Int {
+			var emitter = new ParticleEmitter(x, y, 100);
+			emitter.setSpeed(200, 400);
+			emitter.setAngle(0, 360);
+			emitter.setLifetime(0.8, 1.5);
+			emitter.setScale(0.3, 0.5, 0, 0);
+			emitter.setAlpha(1, 0);
+			emitter.setBlend('additive');
+			if (colors != null) {
+				var flxColors:Array<FlxColor> = [for (c in colors) FlxColor.createFromRGB(c >> 16 & 0xFF, c >> 8 & 0xFF, c & 0xFF)];
+				emitter.setColors(flxColors);
+			} else {
+				emitter.setColors([FlxColor.RED, FlxColor.YELLOW, FlxColor.ORANGE]);
+			}
+			emitter.setParticleGraphic(8);
+			emitter.explode(count);
+			emitter.cameras = [camHUD]; PlayState.instance.add(emitter); return assignParticleEmitterId(emitter);
+		});
+		
+		Lua_helper.add_callback(lua, "smoke", function(x:Float, y:Float, ?count:Int = 5):Int {
+			var emitter = new ParticleEmitter(x, y, 50);
+			emitter.setSpeed(20, 50);
+			emitter.setAngle(250, 290);
+			emitter.setAcceleration(0, -50);
+			emitter.setLifetime(1, 2);
+			emitter.setScale(1, 2, 3, 5);
+			emitter.setAlpha(0.5, 0);
+			emitter.setColors([FlxColor.GRAY, FlxColor.DARK_GRAY, FlxColor.fromRGB(100, 100, 100)]);
+			emitter.setParticleGraphic(16);
+			emitter.start(0.1);
+			emitter.cameras = [camHUD]; PlayState.instance.add(emitter); return assignParticleEmitterId(emitter);
+		});
+		
+		Lua_helper.add_callback(lua, "sparks", function(x:Float, y:Float, angle:Float, ?count:Int = 10):Int {
+			var emitter = new ParticleEmitter(x, y, 50);
+			emitter.setSpeed(100, 200);
+			emitter.setAngle(angle - 15, angle + 15);
+			emitter.setLifetime(0.3, 0.6);
+			emitter.setScale(0.2, 0.3, 0, 0);
+			emitter.setAlpha(1, 0);
+			emitter.setBlend('additive');
+			emitter.setColors([FlxColor.YELLOW, FlxColor.ORANGE, FlxColor.WHITE]);
+			emitter.setParticleGraphic(4);
+			emitter.explode(count);
+			emitter.cameras = [camHUD]; PlayState.instance.add(emitter); return assignParticleEmitterId(emitter);
+		});
+		
+		Lua_helper.add_callback(lua, "confetti", function(?x:Float = -1, ?y:Float = -1, ?count:Int = 50):Int {
+			if (x < 0) x = FlxG.width / 2;
+			if (y < 0) y = 0;
+			var emitter = new ParticleEmitter(x, y, 200);
+			emitter.setSize(100, 0);
+			emitter.setSpeed(50, 150);
+			emitter.setAngle(80, 100);
+			emitter.setAcceleration(0, 100);
+			emitter.setDrag(0.5, 0);
+			emitter.setLifetime(2, 4);
+			emitter.setScale(0.5, 0.8, 0.3, 0.5);
+			emitter.setAlpha(1, 0);
+			emitter.setColors([FlxColor.RED, FlxColor.BLUE, FlxColor.GREEN, FlxColor.YELLOW, FlxColor.PINK, FlxColor.CYAN]);
+			emitter.setParticleGraphic(6);
+			emitter.start(0.05);
+			emitter.cameras = [camHUD]; PlayState.instance.add(emitter); return assignParticleEmitterId(emitter);
+		});
+		
+		Lua_helper.add_callback(lua, "stars", function(x:Float, y:Float, ?count:Int = 20):Int {
+			var emitter = new ParticleEmitter(x, y, 100);
+			emitter.setSpeed(10, 30);
+			emitter.setAngle(170, 190);
+			emitter.setLifetime(1, 3);
+			emitter.setScale(0.1, 0.3, 0.1, 0.3);
+			emitter.setAlpha(1, 0.5);
+			emitter.setBlend('additive');
+			emitter.setColors([FlxColor.WHITE, FlxColor.fromRGB(200, 200, 255)]);
+			emitter.setParticleGraphic(3);
+			emitter.explode(count);
+			emitter.cameras = [camHUD]; PlayState.instance.add(emitter); return assignParticleEmitterId(emitter);
+		});
+	}
+	
+	var particleEmitters:Map<Int, ParticleEmitter> = new Map();
+	var nextEmitterId:Int = 0;
+	
+	function assignParticleEmitterId(emitter:ParticleEmitter):Int
+	{
+		var id = nextEmitterId++;
+		particleEmitters.set(id, emitter);
+		return id;
+	}
+	
+	function getParticleEmitter(id:Int):ParticleEmitter
+	{
+		return particleEmitters.get(id);
 	}
 	#end
 
