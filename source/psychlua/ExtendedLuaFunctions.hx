@@ -216,37 +216,6 @@ class ExtendedLuaFunctions
             return Std.is(obj, FlxTween);
         });
         
-        Lua_helper.add_callback(lua, "isString", function(obj:Dynamic):Bool {
-            return Std.is(obj, String);
-        });
-        
-        Lua_helper.add_callback(lua, "isNumber", function(obj:Dynamic):Bool {
-            return Std.is(obj, Int) || Std.is(obj, Float);
-        });
-        
-        Lua_helper.add_callback(lua, "isArray", function(obj:Dynamic):Bool {
-            return Std.is(obj, Array);
-        });
-        
-        Lua_helper.add_callback(lua, "isFunction", function(obj:Dynamic):Bool {
-            return Reflect.isFunction(obj);
-        });
-        
-        Lua_helper.add_callback(lua, "getTypeName", function(obj:Dynamic):String {
-            if (obj == null) return 'nil';
-            if (Std.is(obj, Bool)) return 'boolean';
-            if (Std.is(obj, Int) || Std.is(obj, Float)) return 'number';
-            if (Std.is(obj, String)) return 'string';
-            if (Std.is(obj, Array)) return 'array';
-            if (Reflect.isFunction(obj)) return 'function';
-            if (Std.is(obj, FlxSprite)) return 'FlxSprite';
-            if (Std.is(obj, FlxText)) return 'FlxText';
-            if (Std.is(obj, FlxGroup)) return 'FlxGroup';
-            if (Std.is(obj, FlxCamera)) return 'FlxCamera';
-            if (Std.is(obj, FlxTween)) return 'FlxTween';
-            return 'unknown';
-        });
-        
         // === UTILITY FUNCTIONS ===
         Lua_helper.add_callback(lua, "lerp", function(a:Float, b:Float, t:Float):Float {
             return a + (b - a) * t;
@@ -350,17 +319,6 @@ class ExtendedLuaFunctions
         });
         
         // === DEBUG ===
-        Lua_helper.add_callback(lua, "inspectValue", function(obj:Dynamic, ?depth:Int = 0):Dynamic {
-            return inspectObject(obj, depth);
-        });
-        
-        Lua_helper.add_callback(lua, "debugAllVars", function():Void {
-            var vars = funk.getLocalVariables();
-            for (key in vars.keys()) {
-                FunkinLua.luaTrace('$key = ${vars.get(key)}', false, false, FlxColor.CYAN);
-            }
-        });
-        
         Lua_helper.add_callback(lua, "printTable", function(obj:Dynamic):String {
             return inspectObject(obj, 0);
         });
