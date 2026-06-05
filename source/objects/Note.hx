@@ -97,6 +97,23 @@ class Note extends FlxSprite
 	public static var swagWidth:Float = 160 * 0.7;
 	public static var colArray:Array<String> = ['purple', 'blue', 'green', 'red'];
 	public static var defaultNoteSkin(default, never):String = 'noteSkins/NOTE_assets';
+	
+	// FlxRect pool for clipRect reuse
+	static var _rectPool:Array<FlxRect> = [];
+	static var _rectPoolIndex:Int = 0;
+	
+	static function getPooledRect():FlxRect {
+		if (_rectPool.length > 0) {
+			return _rectPool.shift();
+		}
+		return new FlxRect();
+	}
+	
+	static function returnRectToPool(rect:FlxRect) {
+		if (rect != null && _rectPool.length < 64) { // Limit pool size
+			_rectPool.push(rect);
+		}
+	}
 
 	public var noteSplashData:NoteSplashData = {
 		disabled: false,
@@ -544,7 +561,7 @@ class Note extends FlxSprite
 		if((mustPress || !ignoreNote) && (wasGoodHit || (prevNote.wasGoodHit && !canBeHit)))
 		{
 			var swagRect:FlxRect = clipRect;
-			if(swagRect == null) swagRect = new FlxRect(0, 0, frameWidth, frameHeight);
+			if(swagRect == null) swagRect = getPooledRect();
 
 			if (myStrum.downScroll)
 			{

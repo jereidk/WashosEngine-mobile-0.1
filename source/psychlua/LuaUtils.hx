@@ -25,6 +25,26 @@ class LuaUtils
 	public static final Function_StopLua:String = "##PSYCHLUA_FUNCTIONSTOPLUA";
 	public static final Function_StopHScript:String = "##PSYCHLUA_FUNCTIONSTOPHSCRIPT";
 	public static final Function_StopAll:String = "##PSYCHLUA_FUNCTIONSTOPALL";
+	
+	// Cache for property path splits to avoid repeated string operations
+	static var _propertySplitCache:Map<String, Array<String>> = new Map();
+	static var _arraySplitCache:Map<String, Array<String>> = new Map();
+	
+	// Get cached property split
+	static function getCachedPropertySplit(prop:String):Array<String> {
+		if (!_propertySplitCache.exists(prop)) {
+			_propertySplitCache.set(prop, prop.split('.'));
+		}
+		return _propertySplitCache.get(prop);
+	}
+	
+	// Get cached array access split
+	static function getCachedArraySplit(prop:String):Array<String> {
+		if (!_arraySplitCache.exists(prop)) {
+			_arraySplitCache.set(prop, prop.split('['));
+		}
+		return _arraySplitCache.get(prop);
+	}
 
 	public static function getLuaTween(options:Dynamic)
 	{
@@ -41,7 +61,7 @@ class LuaUtils
 
 	public static function setVarInArray(instance:Dynamic, variable:String, value:Dynamic, allowMaps:Bool = false):Any
 	{
-		var splitProps:Array<String> = variable.split('[');
+		var splitProps:Array<String> = getCachedArraySplit(variable);
 		if(splitProps.length > 1)
 		{
 			var target:Dynamic = null;
@@ -56,6 +76,7 @@ class LuaUtils
 			for (i in 1...splitProps.length)
 			{
 				var j:Dynamic = splitProps[i].substr(0, splitProps[i].length - 1);
+				if (target == null) return null; // Safety check
 				if(i >= splitProps.length-1) //Last array
 					target[j] = value;
 				else //Anything else
@@ -81,7 +102,7 @@ class LuaUtils
 	}
 	public static function getVarInArray(instance:Dynamic, variable:String, allowMaps:Bool = false):Any
 	{
-		var splitProps:Array<String> = variable.split('[');
+		var splitProps:Array<String> = getCachedArraySplit(variable);
 		if(splitProps.length > 1)
 		{
 			var target:Dynamic = null;
@@ -97,6 +118,7 @@ class LuaUtils
 			for (i in 1...splitProps.length)
 			{
 				var j:Dynamic = splitProps[i].substr(0, splitProps[i].length - 1);
+				if (target == null) return null; // Safety check
 				target = target[j];
 			}
 			return target;

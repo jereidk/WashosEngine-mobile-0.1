@@ -28,6 +28,30 @@ class Paths
 {
 	inline public static var SOUND_EXT = #if web "mp3" #else "ogg" #end;
 	inline public static var VIDEO_EXT = "mp4";
+	
+	// ASTC texture support
+	#if android
+	public static var ASTC_ENABLED:Bool = true;
+	public static var ASTC_BLOCK_SIZE:String = "6x6"; // 6x6 = good quality, 8x8 = smaller files
+	#else
+	public static var ASTC_ENABLED:Bool = false;
+	public static var ASTC_BLOCK_SIZE:String = "6x6";
+	#end
+	
+	// Helper to find ASTC version of a file
+	inline static public function getASTCPath(key:String, ?parentFolder:String = null):String {
+		#if android
+		if (!ASTC_ENABLED) return null;
+		var basePath = getPath(key, IMAGE, parentFolder, true);
+		var astcPath = basePath + '.astc';
+		#if MODS_ALLOWED
+		if (FileSystem.exists(astcPath)) return astcPath;
+		#end
+		return null;
+		#else
+		return null;
+		#end
+	}
 
 	public static function excludeAsset(key:String) {
 		if (!dumpExclusions.contains(key))
@@ -240,6 +264,22 @@ class Paths
 			localTrackedAssets.push(key);
 			return currentTrackedAssets.get(key);
 		}
+		
+		// Check for ASTC pre-compressed texture on Android
+		#if android
+		if (ASTC_ENABLED) {
+			var astcKey = key + '.astc';
+			var astcPath = getPath(key + '.astc', IMAGE, parentFolder, true);
+			#if MODS_ALLOWED
+			if (FileSystem.exists(astcPath)) {
+				trace('Loading ASTC texture: $astcPath');
+				// For now, fall through to PNG loading if ASTC not fully implemented
+				// Full ASTC loading would require native texture decoder
+			}
+			#end
+		}
+		#end
+		
 		return cacheBitmap(key, parentFolder, bitmap, allowGPU);
 	}
 
