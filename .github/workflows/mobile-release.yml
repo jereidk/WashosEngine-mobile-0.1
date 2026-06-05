@@ -36,6 +36,7 @@ jobs:
     name: Android
     needs: get-commit-hash
     runs-on: macos-15
+    if: always()
     continue-on-error: true
     steps:
       - name: Checkout
@@ -112,6 +113,7 @@ jobs:
     name: iOS
     needs: get-commit-hash
     runs-on: macos-15
+    if: always()
     continue-on-error: true
     steps:
       - name: Checkout
