@@ -6,6 +6,7 @@ import backend.Highscore;
 import backend.Song;
 import backend.Particle;
 import backend.ParticleEmitter;
+import backend.ScriptHotReload;
 
 import openfl.Lib;
 import openfl.utils.Assets;
@@ -1580,6 +1581,7 @@ class FunkinLua {
 			DebugLogger.instance.init();
 			registerDebugFunctions(lua);
 			registerParticleFunctions(lua);
+			registerHotReloadFunctions(lua);
 			#end
 			
 			LuaBridge.instance.init(lua);
@@ -2093,6 +2095,48 @@ class FunkinLua {
 		return particleEmitters.get(id);
 	}
 	#end
+	
+	// ============================================
+	// HOT RELOAD FUNCTIONS
+	// ============================================
+	
+	function registerHotReloadFunctions(lua:State):Void
+	{
+		// Enable/disable hot reload watching
+		Lua_helper.add_callback(lua, "enableHotReload", function(enabled:Bool):Void {
+			ScriptHotReload.instance.enableWatching(enabled);
+		});
+		
+		// Check if hot reload is enabled
+		Lua_helper.add_callback(lua, "isHotReloadEnabled", function():Bool {
+			return ScriptHotReload.instance.watchingEnabled;
+		});
+		
+		// Force reload all scripts
+		Lua_helper.add_callback(lua, "reloadAllScripts", function():Int {
+			return ScriptHotReload.instance.reloadAllScripts();
+		});
+		
+		// Reload a specific script by path
+		Lua_helper.add_callback(lua, "reloadScript", function(path:String):Bool {
+			return ScriptHotReload.instance.reloadByPath(path);
+		});
+		
+		// Get hot reload stats
+		Lua_helper.add_callback(lua, "getHotReloadStats", function():Dynamic {
+			return ScriptHotReload.instance.getStats();
+		});
+		
+		// Get list of active scripts
+		Lua_helper.add_callback(lua, "getActiveScripts", function():Array<String> {
+			return ScriptHotReload.instance.getActiveScripts();
+		});
+		
+		// Show/hide reload notifications
+		Lua_helper.add_callback(lua, "setHotReloadNotifications", function(enabled:Bool):Void {
+			ScriptHotReload.instance.showNotifications = enabled;
+		});
+	}
 
 	function findScript(scriptFile:String, ext:String = '.lua')
 	{
