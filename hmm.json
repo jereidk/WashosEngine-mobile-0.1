@@ -1,0 +1,70 @@
+{
+  "dependencies": [
+    {
+      "name": "lime",
+      "type": "git",
+      "ref": "8.2.0",
+      "url": "https://github.com/mcagabe19-stuff/lime"
+    },
+    {
+      "name": "openfl",
+      "type": "haxelib",
+      "version": "9.3.3"
+    },
+    {
+      "name": "flixel",
+      "type": "git",
+      "ref": "5.6.1",
+      "url": "https://github.com/MobilePorting/flixel"
+    },
+    {
+      "name": "flixel-addons",
+      "type": "haxelib",
+      "version": "3.2.2"
+    },
+    {
+      "name": "hxcpp",
+      "type": "git",
+      "ref": "master",
+      "url": "https://github.com/mcagabe19-stuff/hxcpp"
+    },
+    {
+      "name": "hscript-iris",
+      "type": "haxelib",
+      "version": "1.1.3"
+    },
+    {
+      "name": "flxanimate",
+      "type": "git",
+      "ref": "main",
+      "url": "https://github.com/Dot-Stuff/flxanimate"
+    },
+    {
+      "name": "tjson",
+      "type": "haxelib",
+      "version": "1.4.0"
+    },
+    {
+      "name": "hxvlc",
+      "type": "haxelib",
+      "version": "2.0.1"
+    },
+    {
+      "name": "hxdiscord_rpc",
+      "type": "haxelib",
+      "version": "1.2.4"
+    },
+    {
+      "name": "linc_luajit",
+      "type": "git",
+      "ref": "main",
+      "url": "https://github.com/MobilePorting/linc_luajit-0.7plus"
+    },
+    {
+      "name": "extension-androidtools",
+      "type": "git",
+      "ref": "main",
+      "url": "https://github.com/MAJigsaw77/extension-androidtools"
+    }
+  ]
+}

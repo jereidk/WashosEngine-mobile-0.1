@@ -16,6 +16,9 @@ on:
       buildArgs:
         required: true
         type: string
+      assetType:
+        required: true
+        type: string
       artifactName:
         required: true
         type: string
@@ -34,6 +37,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@main
+        with:
+          submodules: true
 
       - name: Setup Haxe
         uses: krdlab/setup-haxe@master
@@ -47,80 +52,40 @@ jobs:
         with:
           ndk-version: r28
 
-      - name: Install libVLC
-        if: inputs.name == 'Linux'
-        run: sudo apt install libvlc-dev libvlccore-dev
-
-      - name: Install Haxe Dependencies
+      - name: Install Dependencies
+        shell: bash
         run: |
-          haxelib setup ~/haxelib || true
-          haxelib install lime --quiet || echo "lime install may have issues"
-          haxelib install openfl --quiet || echo "openfl install may have issues"
-          haxelib install flixel --quiet || echo "flixel install may have issues"
-          haxelib install hxcpp --quiet || echo "hxcpp install may have issues"
-          haxelib run lime setup -y || echo "lime setup may have issues"
-
-      - name: Run Custom Setup Script
-        if: inputs.setupCommand != ''
-        run: |
-          ${{ inputs.setupCommand }} || echo "Custom setup script had warnings (continuing...)"
-
-      - name: Install Mobile Dependencies (iOS/Android)
-        if: inputs.name == 'iOS' || inputs.name == 'Android'
-        run: |
-          haxelib git hxcpp https://github.com/mcagabe19-stuff/hxcpp --quiet || true
-          haxelib git lime https://github.com/mcagabe19-stuff/lime --quiet || true
-          haxelib install openfl 9.3.3 --quiet || true
-          haxelib git flixel https://github.com/MobilePorting/flixel 5.6.1 --quiet || true
-          haxelib install flixel-addons 3.2.2 --quiet || true
-          haxelib install hscript-iris 1.1.3 --quiet || true
-          haxelib install tjson 1.4.0 --quiet || true
-          haxelib git flxanimate https://github.com/Dot-Stuff/flxanimate --quiet || true
-          haxelib install hxvlc 2.0.1 --quiet || true
-          haxelib install hxdiscord_rpc 1.2.4 --quiet || true
-          haxelib install extension-androidtools --quiet || true
-          # linc_luajit - try multiple sources
-          haxelib git linc_luajit https://github.com/MobilePorting/linc_luajit-0.7plus --quiet || \
-          haxelib install linc_luajit --quiet || \
-          echo "linc_luajit may not be available"
+          haxelib git hmm https://github.com/ShadowEngineTeam/hmm --skip-dependencies --quiet
+          haxelib run hmm install --quiet || echo "hmm install completed with warnings"
 
       - name: Configure Android
         if: inputs.name == 'Android'
         run: |
           haxelib run lime config ANDROID_SDK $ANDROID_HOME || true
-          haxelib run lime config ANDROID_NDK_ROOT ${{ steps.ndk.outputs.ndk-path }} || true
-          haxelib run lime config JAVA_HOME $JAVA_HOME_17_arm64 || true
+          haxelib run lime config ANDROID_NDK_ROOT $ANDROID_NDK_LATEST_HOME || true
+          haxelib run lime config JAVA_HOME $JAVA_HOME_21_arm64 || true
           haxelib run lime config ANDROID_SETUP true || true
 
       - name: Compile
-        run: haxelib run lime build ${{ inputs.buildArgs }} || {
-          echo "Build may have warnings, checking for output...";
-          ls -la export/ 2>/dev/null || true;
-        }
+        shell: bash
+        run: haxelib run lime build ${{ inputs.buildArgs }} -D ${{ inputs.assetType }}
         continue-on-error: true
 
-      - name: Verify Build Output
-        run: |
-          echo "Checking build output directory..."
-          find export/ -name "*.apk" -o -name "*.ipa" -o -name "*.app" 2>/dev/null | head -10 || echo "No build artifacts found yet"
-
       - name: Make IPA
-        if: inputs.name == 'iOS'
+        if: startsWith(inputs.name, 'iOS')
+        shell: bash
         run: |
+          brew install ldid || true
           if [ -d "export/release/ios/build/Release-iphoneos" ]; then
             cd export/release/ios/build/Release-iphoneos
             mkdir -p Payload
             mv *.app Payload/ 2>/dev/null || true
             zip -r ${{ env.PROJECT_NAME }}.ipa Payload 2>/dev/null || echo "IPA creation skipped"
-          else
-            echo "iOS build directory not found, checking alternatives..."
-            find export/ -type d -name "*.app" 2>/dev/null | head -5
           fi
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ inputs.artifactName }}
+          name: ${{ inputs.artifactName }}-${{ inputs.assetType }}
           path: ${{ inputs.artifactPath }}
-          retention-days: 5
-          if-no-files-found: warn
+          if-no-files-found: error

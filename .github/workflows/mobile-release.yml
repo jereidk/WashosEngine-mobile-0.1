@@ -1,189 +1,68 @@
 name: Mobile + Release
-on: workflow_dispatch
 
-permissions:
-  contents: write
-  discussions: write
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+      - fix/**
+      - dev/**
+  pull_request:
+    branches:
+      - main
 
 env:
+  HAXE_VERSION: 4.3.6
   PROJECT_NAME: WashosEngine
-  REPO_PATH_KEYWORD: WashosEngine-mobile
 
 jobs:
   get-commit-hash:
+    name: Get Commit Hash
     runs-on: ubuntu-latest
     outputs:
-      commit_hash: ${{ steps.get_commit_hash.outputs.COMMIT_HASH }}
+      commit_hash: ${{ steps.hash.outputs.COMMIT_HASH }}
     steps:
-      - name: Check Repository
+      - name: Checkout
+        uses: actions/checkout@main
+      - id: hash
         run: |
-          echo "GITHUB_REPOSITORY: $GITHUB_REPOSITORY"
-          if [[ "$GITHUB_REPOSITORY" != *"${{ env.REPO_PATH_KEYWORD }}"* ]]; then
-            echo "Repository mismatch. Exiting..."
-            exit 6
-          else
-            echo "Repository valid."
-          fi
-
-      - name: Get latest commit hash
-        id: get_commit_hash
-        run: |
-          commit_hash=${GITHUB_SHA::7}
+          commit_hash=$(git rev-parse --short HEAD)
           echo "Latest commit hash: $commit_hash"
           echo "COMMIT_HASH=$commit_hash" >> $GITHUB_OUTPUT
 
-  build-android:
-    name: Android
+  Build:
+    name: ${{ matrix.name }}
     needs: get-commit-hash
-    runs-on: macos-15
-    if: always()
-    continue-on-error: true
-    steps:
-      - name: Checkout
-        uses: actions/checkout@main
-
-      - name: Setup Haxe
-        uses: krdlab/setup-haxe@master
-        with:
-          haxe-version: 4.3.6
-
-      - name: Setup Android NDK
-        uses: nttld/setup-ndk@main
-        id: ndk
-        with:
-          ndk-version: r28
-
-      - name: Install Haxe Dependencies
-        run: |
-          echo "=== Starting Haxe Dependencies Installation ==="
-          haxelib setup ~/haxelib || true
-          
-          # The macOS runners have lime pre-installed, don't try to install it
-          echo "Checking lime status..."
-          haxelib list | head -20
-          
-          # Install other dependencies (skip if already installed)
-          echo "Installing other dependencies..."
-          haxelib install openfl 9.3.3 --quiet 2>/dev/null || true
-          haxelib install flixel 5.6.0 --quiet 2>/dev/null || true
-          haxelib install flixel-addons 3.2.2 --quiet 2>/dev/null || true
-          haxelib install hscript-iris 1.1.3 --quiet 2>/dev/null || true
-          haxelib install tjson 1.4.0 --quiet 2>/dev/null || true
-          haxelib install hxvlc 2.0.1 --quiet 2>/dev/null || true
-          haxelib install hxdiscord_rpc 1.2.4 --quiet 2>/dev/null || true
-          haxelib install extension-androidtools --quiet 2>/dev/null || true
-          haxelib install linc_luajit --quiet 2>/dev/null || true
-          
-          # Git-based installations (optional, only if regular install fails)
-          echo "Installing git-based libraries (optional)..."
-          haxelib git hxcpp https://github.com/mcagabe19-stuff/hxcpp --quiet 2>/dev/null || true
-          haxelib git flixel https://github.com/MobilePorting/flixel 5.6.1 --quiet 2>/dev/null || true
-          haxelib git flxanimate https://github.com/Dot-Stuff/flxanimate --quiet 2>/dev/null || true
-          haxelib git linc_luajit https://github.com/MobilePorting/linc_luajit-0.7plus --quiet 2>/dev/null || true
-          
-          echo "=== Installed libraries ==="
-          haxelib list
-
-      - name: Verify Lime
-        run: |
-          echo "=== Verifying Lime ==="
-          haxelib run lime version || echo "Lime check completed"
-
-      - name: Configure Android
-        run: |
-          haxelib run lime config ANDROID_SDK $ANDROID_HOME || true
-          haxelib run lime config ANDROID_NDK_ROOT ${{ steps.ndk.outputs.ndk-path }} || true
-          haxelib run lime config JAVA_HOME $JAVA_HOME_17_arm64 || true
-          haxelib run lime config ANDROID_SETUP true || true
-
-      - name: Build Android
-        run: haxelib run lime build android -final -D officialBuild -D HXCPP_PAGESIZE_4K
-        continue-on-error: true
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: androidBuild
-          path: export/release/android/bin/app/build/outputs/apk/release/*.apk
-          retention-days: 5
-          if-no-files-found: warn
-
-  build-ios:
-    name: iOS
-    needs: get-commit-hash
-    runs-on: macos-15
-    if: always()
-    continue-on-error: true
-    steps:
-      - name: Checkout
-        uses: actions/checkout@main
-
-      - name: Setup Haxe
-        uses: krdlab/setup-haxe@master
-        with:
-          haxe-version: 4.3.6
-
-      - name: Install Haxe Dependencies
-        run: |
-          echo "=== Starting Haxe Dependencies Installation ==="
-          haxelib setup ~/haxelib || true
-          
-          # The macOS runners have lime pre-installed, don't try to install it
-          echo "Checking lime status..."
-          haxelib list | head -20
-          
-          # Install other dependencies (skip if already installed)
-          echo "Installing other dependencies..."
-          haxelib install openfl 9.3.3 --quiet 2>/dev/null || true
-          haxelib install flixel 5.6.0 --quiet 2>/dev/null || true
-          haxelib install flixel-addons 3.2.2 --quiet 2>/dev/null || true
-          haxelib install hscript-iris 1.1.3 --quiet 2>/dev/null || true
-          haxelib install tjson 1.4.0 --quiet 2>/dev/null || true
-          haxelib install hxvlc 2.0.1 --quiet 2>/dev/null || true
-          haxelib install hxdiscord_rpc 1.2.4 --quiet 2>/dev/null || true
-          haxelib install linc_luajit --quiet 2>/dev/null || true
-          
-          # Git-based installations (optional, only if regular install fails)
-          echo "Installing git-based libraries (optional)..."
-          haxelib git hxcpp https://github.com/mcagabe19-stuff/hxcpp --quiet 2>/dev/null || true
-          haxelib git flixel https://github.com/MobilePorting/flixel 5.6.1 --quiet 2>/dev/null || true
-          haxelib git flxanimate https://github.com/Dot-Stuff/flxanimate --quiet 2>/dev/null || true
-          haxelib git linc_luajit https://github.com/MobilePorting/linc_luajit-0.7plus --quiet 2>/dev/null || true
-          
-          echo "=== Installed libraries ==="
-          haxelib list
-
-      - name: Verify Lime
-        run: |
-          echo "=== Verifying Lime ==="
-          haxelib run lime version || echo "Lime check completed"
-
-      - name: Build iOS
-        run: haxelib run lime build ios -final -nosign -D officialBuild
-        continue-on-error: true
-
-      - name: Make IPA
-        if: always()
-        run: |
-          if [ -d "export/release/ios/build/Release-iphoneos" ]; then
-            cd export/release/ios/build/Release-iphoneos
-            mkdir -p Payload
-            mv *.app Payload/ 2>/dev/null || true
-            zip -r ../../../../../WashosEngine.ipa Payload 2>/dev/null || echo "IPA skipped"
-          fi
-
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: iOSBuild
-          path: export/release/ios/build/*.ipa
-          retention-days: 5
-          if-no-files-found: warn
+    uses: ./.github/workflows/build.yml
+    with:
+      name: ${{ matrix.name }}
+      os: ${{ matrix.os }}
+      buildArgs: ${{ matrix.buildArgs }}
+      assetType: ASTC
+      artifactName: ${{ matrix.artifactName }}
+      artifactPath: ${{ matrix.artifactPath }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Android
+            os: macos-26
+            buildArgs: "android -ONLY_ARM64"
+            artifactName: androidBuild
+            artifactPath: "export/release/android/bin/app/build/outputs/apk/release/*.apk"
+          - name: iOS
+            os: macos-15
+            buildArgs: "ios -nosign"
+            artifactName: iOSBuild
+            artifactPath: "export/release/ios/build/Release-iphoneos/*.ipa"
+          - name: iOS Simulator
+            os: macos-15
+            buildArgs: "ios -simulator -nosign"
+            artifactName: iOSSimulatorBuild
+            artifactPath: "export/release/ios/build/Release-iphonesimulator/*.ipa"
 
   Releaser:
-    needs: [get-commit-hash, build-android, build-ios]
+    needs: [get-commit-hash, Build]
     runs-on: ubuntu-latest
     if: always()
     continue-on-error: true
@@ -192,14 +71,14 @@ jobs:
       - name: Download Android Build
         uses: actions/download-artifact@v4
         with:
-          name: androidBuild
+          name: androidBuild-ASTC
           path: /home/runner/android
         continue-on-error: true
 
       - name: Download iOS Build
         uses: actions/download-artifact@v4
         with:
-          name: iOSBuild
+          name: iOSBuild-ASTC
           path: /home/runner/ios
         continue-on-error: true
 
