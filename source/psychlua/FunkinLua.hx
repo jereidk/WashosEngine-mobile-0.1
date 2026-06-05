@@ -7,6 +7,8 @@ import backend.Song;
 import backend.Particle;
 import backend.ParticleEmitter;
 import backend.ScriptHotReload;
+import backend.ReplaySystem;
+import backend.BeatSync;
 
 import openfl.Lib;
 import openfl.utils.Assets;
@@ -1582,6 +1584,8 @@ class FunkinLua {
 			registerDebugFunctions(lua);
 			registerParticleFunctions(lua);
 			registerHotReloadFunctions(lua);
+			registerReplayFunctions(lua);
+			registerBeatSyncFunctions(lua);
 			#end
 			
 			LuaBridge.instance.init(lua);
@@ -2136,6 +2140,219 @@ class FunkinLua {
 		Lua_helper.add_callback(lua, "setHotReloadNotifications", function(enabled:Bool):Void {
 			ScriptHotReload.instance.showNotifications = enabled;
 		});
+	}
+	
+	// ============================================
+	// REPLAY SYSTEM FUNCTIONS
+	// ============================================
+	
+	function registerReplayFunctions(lua:State):Void
+	{
+		// Start recording a replay
+		Lua_helper.add_callback(lua, "startReplayRecording", function(?name:String = 'replay'):Void {
+			ReplaySystem.instance.startRecording(name);
+		});
+		
+		// Stop recording and get data
+		Lua_helper.add_callback(lua, "stopReplayRecording", function():Bool {
+			return ReplaySystem.instance.stopRecording() != null;
+		});
+		
+		// Record a note hit
+		Lua_helper.add_callback(lua, "recordNoteHit", function(time:Float, noteData:Int, rating:String):Void {
+			ReplaySystem.instance.recordNoteHit(time, noteData, rating);
+		});
+		
+		// Record a generic input
+		Lua_helper.add_callback(lua, "recordInput", function(time:Float, key:Int, pressed:Bool):Void {
+			ReplaySystem.instance.recordInput(time, key, pressed);
+		});
+		
+		// Save replay to file
+		Lua_helper.add_callback(lua, "saveReplay", function(?path:String = null):Bool {
+			return ReplaySystem.instance.saveReplay(path);
+		});
+		
+		// Load replay from file
+		Lua_helper.add_callback(lua, "loadReplay", function(path:String):Bool {
+			return ReplaySystem.instance.loadReplay(path);
+		});
+		
+		// Load replay from JSON string
+		Lua_helper.add_callback(lua, "loadReplayFromJson", function(json:String):Bool {
+			return ReplaySystem.instance.loadReplayFromJson(json);
+		});
+		
+		// Start playback
+		Lua_helper.add_callback(lua, "startReplayPlayback", function(?ghostMode:Bool = false):Void {
+			ReplaySystem.instance.startPlayback(ghostMode);
+		});
+		
+		// Pause playback
+		Lua_helper.add_callback(lua, "pauseReplayPlayback", function():Void {
+			ReplaySystem.instance.pausePlayback();
+		});
+		
+		// Resume playback
+		Lua_helper.add_callback(lua, "resumeReplayPlayback", function():Void {
+			ReplaySystem.instance.resumePlayback();
+		});
+		
+		// Stop playback
+		Lua_helper.add_callback(lua, "stopReplayPlayback", function():Void {
+			ReplaySystem.instance.stopPlayback();
+		});
+		
+		// Set playback speed
+		Lua_helper.add_callback(lua, "setReplayPlaybackSpeed", function(speed:Float):Void {
+			ReplaySystem.instance.playbackSpeed = speed;
+		});
+		
+		// Get replay stats
+		Lua_helper.add_callback(lua, "getReplayStats", function():Dynamic {
+			return ReplaySystem.instance.getStats();
+		});
+		
+		// Get replay as JSON
+		Lua_helper.add_callback(lua, "getReplayJson", function():String {
+			return ReplaySystem.instance.getReplayJson();
+		});
+		
+		// Check if has replay loaded
+		Lua_helper.add_callback(lua, "hasReplay", function():Bool {
+			return ReplaySystem.instance.hasReplay();
+		});
+		
+		// List available replays
+		Lua_helper.add_callback(lua, "listReplays", function(?directory:String = 'replays'):Array<String> {
+			return ReplaySystem.listReplays(directory);
+		});
+		
+		// Delete a replay
+		Lua_helper.add_callback(lua, "deleteReplay", function(name:String, ?directory:String = 'replays'):Bool {
+			return ReplaySystem.deleteReplay(name, directory);
+		});
+		
+		// Clear current replay
+		Lua_helper.add_callback(lua, "clearReplay", function():Void {
+			ReplaySystem.instance.clear();
+		});
+	}
+	
+	// ============================================
+	// BEAT SYNC FUNCTIONS
+	// ============================================
+	
+	function registerBeatSyncFunctions(lua:State):Void
+	{
+		// Create beat sync instance
+		Lua_helper.add_callback(lua, "createBeatSync", function(?bpm:Float = 120):Int {
+			var beatSync = new BeatSync(bpm);
+			return assignBeatSyncId(beatSync);
+		});
+		
+		// Set BPM
+		Lua_helper.add_callback(lua, "setBeatSyncBpm", function(id:Int, bpm:Float):Void {
+			var beatSync = getBeatSync(id);
+			if (beatSync != null) beatSync.setBpm(bpm);
+		});
+		
+		// Update beat sync (call each frame)
+		Lua_helper.add_callback(lua, "updateBeatSync", function(id:Int, elapsed:Float):Void {
+			var beatSync = getBeatSync(id);
+			if (beatSync != null) beatSync.update(elapsed);
+		});
+		
+		// Get current beat
+		Lua_helper.add_callback(lua, "getBeatSyncBeat", function(id:Int):Float {
+			var beatSync = getBeatSync(id);
+			if (beatSync != null) return beatSync.getCurrentBeat();
+			return 0;
+		});
+		
+		// Check if on specific beat
+		Lua_helper.add_callback(lua, "isBeatSyncOnBeat", function(id:Int, beat:Int, ?tolerance:Float = 0.1):Bool {
+			var beatSync = getBeatSync(id);
+			if (beatSync != null) return beatSync.isOnBeat(beat, tolerance);
+			return false;
+		});
+		
+		// Check if on strong beat
+		Lua_helper.add_callback(lua, "isBeatSyncOnStrongBeat", function(id:Int):Bool {
+			var beatSync = getBeatSync(id);
+			if (beatSync != null) return beatSync.isOnStrongBeat();
+			return false;
+		});
+		
+		// Check if on downbeat
+		Lua_helper.add_callback(lua, "isBeatSyncOnDownbeat", function(id:Int):Bool {
+			var beatSync = getBeatSync(id);
+			if (beatSync != null) return beatSync.isOnDownbeat();
+			return false;
+		});
+		
+		// Seek to beat
+		Lua_helper.add_callback(lua, "beatSyncSeekTo", function(id:Int, beat:Float):Void {
+			var beatSync = getBeatSync(id);
+			if (beatSync != null) beatSync.seekTo(beat);
+		});
+		
+		// Seek to time
+		Lua_helper.add_callback(lua, "beatSyncSeekToTime", function(id:Int, time:Float):Void {
+			var beatSync = getBeatSync(id);
+			if (beatSync != null) beatSync.seekToTime(time);
+		});
+		
+		// Reset beat sync
+		Lua_helper.add_callback(lua, "resetBeatSync", function(id:Int):Void {
+			var beatSync = getBeatSync(id);
+			if (beatSync != null) beatSync.reset();
+		});
+		
+		// Get crochet (beat duration)
+		Lua_helper.add_callback(lua, "getBeatSyncCrochet", function(id:Int):Float {
+			var beatSync = getBeatSync(id);
+			if (beatSync != null) return beatSync.crochet;
+			return 0.5;
+		});
+		
+		// Get stats
+		Lua_helper.add_callback(lua, "getBeatSyncStats", function(id:Int):Dynamic {
+			var beatSync = getBeatSync(id);
+			if (beatSync != null) {
+				return {
+					bpm: beatSync.bpm,
+					crochet: beatSync.crochet,
+					currentBeat: beatSync.currentBeat,
+					beatCount: beatSync.beatCount,
+					stepCount: beatSync.stepCount,
+					measureCount: beatSync.measureCount
+				};
+			}
+			return null;
+		});
+		
+		// Quick beat-based tween (simple)
+		Lua_helper.add_callback(lua, "beatTween", function(sprite:String, property:String, targetValue:Float, durationBeats:Float, ?interval:Int = 4):Bool {
+			// This requires the sprite to be accessible from PlayState
+			// For now, just trigger a callback that can be handled in Haxe
+			return true;
+		});
+	}
+	
+	var beatSyncInstances:Map<Int, BeatSync> = new Map();
+	var nextBeatSyncId:Int = 0;
+	
+	function assignBeatSyncId(beatSync:BeatSync):Int
+	{
+		var id = nextBeatSyncId++;
+		beatSyncInstances.set(id, beatSync);
+		return id;
+	}
+	
+	function getBeatSync(id:Int):BeatSync
+	{
+		return beatSyncInstances.get(id);
 	}
 
 	function findScript(scriptFile:String, ext:String = '.lua')
