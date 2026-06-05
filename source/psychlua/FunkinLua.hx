@@ -1569,6 +1569,11 @@ class FunkinLua {
 		DeprecatedFunctions.implement(this);
 		MobileFunctions.implement(this);
 		#if android AndroidFunctions.implement(this); #end
+			LuaUtils.implement(this);
+			ExtendedLuaFunctions.implement(this);
+			
+			// Initialize ScriptBridge for advanced Lua access
+			ScriptBridge.instance.init(this);
 
 		for (name => func in customFunctions)
 		{
