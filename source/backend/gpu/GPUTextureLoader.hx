@@ -5,24 +5,19 @@ import openfl.display.BitmapData;
 import openfl.utils.Assets;
 
 /**
- * GPU Texture Helper for ASTC compressed textures.
- * Based on Shadow Engine approach: https://github.com/ShadowEngineTeam/FNF-Shadow-Engine
- * 
- * Note: OpenFL automatically loads .astc files when available in the asset paths
- * configured in Project.xml. This class provides utility functions for GPU texture operations.
+ * Helper utilities for compressed texture operations on mobile.
  */
 class GPUTextureLoader
 {
-	// GPU texture format constants
-	public static inline var FORMAT_ASTC:String = "ASTC";
-	public static inline var FORMAT_BC:String = "BC";
-	public static inline var FORMAT_PNG:String = "PNG";
+	// Texture format identifiers
+	public static inline var FMT_ASTC:String = "ASTC";
+	public static inline var FMT_BC:String = "BC";
+	public static inline var FMT_PNG:String = "PNG";
 	
 	/**
-	 * Check if GPU compressed textures are enabled.
-	 * This reflects the USING_GPU_TEXTURES haxedef from Project.xml
+	 * Check if compressed textures are active.
 	 */
-	public static inline function isEnabled():Bool {
+	public static inline function isActive():Bool {
 		#if USING_GPU_TEXTURES
 		return true;
 		#else
@@ -31,59 +26,56 @@ class GPUTextureLoader
 	}
 	
 	/**
-	 * Get the current GPU texture format string.
+	 * Get the active texture format name.
 	 */
-	public static inline function getCurrentFormat():String {
+	public static inline function getActiveFormat():String {
 		#if android
-		return FORMAT_ASTC;
+		return FMT_ASTC;
 		#elseif windows
-		return FORMAT_BC;
+		return FMT_BC;
 		#else
-		return FORMAT_PNG;
+		return FMT_PNG;
 		#end
 	}
 	
 	/**
-	 * Get the asset path suffix for the current format.
-	 * Returns "-astc", "-bc", or "" for PNG.
+	 * Get the folder suffix for the current format.
 	 */
-	public static inline function getAssetPathSuffix():String {
+	public static inline function getFolderSuffix():String {
 		#if android
-		return "-astc";
+		return "-compressed";
 		#elseif windows
-		return "-bc";
+		return "-compressed";
 		#else
-		return "-png";
+		return "";
 		#end
 	}
 	
 	/**
-	 * Preload a texture by key.
-	 * This triggers OpenFL to cache the texture.
+	 * Pre-cache a texture.
 	 */
 	public static function preload(key:String):BitmapData {
 		var texture:BitmapData = null;
 		try {
 			texture = Assets.getBitmapData(key);
 		} catch (e:Dynamic) {
-			// Texture not found or load error
+			// Ignore preload errors
 		}
 		return texture;
 	}
 	
 	/**
-	 * Check if a texture exists (ASTC version if available).
+	 * Check if a texture asset exists.
 	 */
 	public static function exists(key:String):Bool {
 		return Assets.exists(key);
 	}
 	
 	/**
-	 * Get memory usage estimate for a texture.
+	 * Estimate memory usage of a texture.
 	 */
-	public static function getTextureMemorySize(texture:BitmapData):Float {
+	public static function getMemorySize(texture:BitmapData):Float {
 		if (texture == null) return 0;
-		// Approximate memory: width * height * 4 bytes (RGBA)
-		return (texture.width * texture.height * 4) / (1024 * 1024); // MB
+		return (texture.width * texture.height * 4) / (1024 * 1024);
 	}
 }

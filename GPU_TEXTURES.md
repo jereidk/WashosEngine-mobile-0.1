@@ -1,32 +1,32 @@
-# GPU Texture Support - WashosEngine
+# Compressed Texture Support - WashosEngine
 
 ## Overview
 
-This engine supports GPU-compressed textures (ASTC for Android, BC for Windows) for optimized performance. Based on [Shadow Engine](https://github.com/ShadowEngineTeam/FNF-Shadow-Engine) approach.
+Mobile and desktop optimization through GPU texture compression. Reduces memory usage and improves loading times.
 
 ## How It Works
 
-The system is **build-time configuration**, not runtime loading:
+**Build-time asset configuration:**
 
-1. **Project.xml** defines asset paths for each format:
-   - `assets/images-astc` → `assets/shared/images` (Android)
-   - `assets/images-bc` → `assets/shared/images` (Windows)
-   - `assets/images-png` → `assets/shared/images` (fallback)
+1. **Project.xml** defines asset paths for each platform:
+   - `assets/images-compressed` → `assets/shared/images` (Android/iOS)
+   - `assets/images-compressed` → `assets/shared/images` (Windows)
+   - `assets/images-base` → `assets/shared/images` (fallback)
 
-2. **USING_GPU_TEXTURES haxedef** is set for Android builds
+2. **USING_GPU_TEXTURES** flag enabled for Android builds
 
-3. **OpenFL automatically** loads the correct format based on asset paths
+3. **OpenFL automatically** loads compressed textures when available
 
 ## Quick Start
 
-### 1. Generate GPU Textures
+### 1. Generate Compressed Textures
 
 ```bash
 cd gpu_texture_generator
 ./build.sh
 ```
 
-This converts all PNG images in `assets/` to ASTC format in `assets/images-astc/`.
+This converts PNG images to compressed format in `assets/images-compressed/`.
 
 ### 2. Build for Android
 
@@ -34,43 +34,42 @@ This converts all PNG images in `assets/` to ASTC format in `assets/images-astc/
 lime build android -release
 ```
 
-OpenFL automatically uses `.astc` files from `assets/images-astc/` when available.
-
 ## File Structure
 
 ```
 WashosEngine/
-├── Project.xml                    # Asset path configuration
-├── project.hxp                    # Texture format settings
-├── astc-compression-data.json     # Compression presets
+├── Project.xml                      # Asset path configuration
+├── project.hxp                      # Compression settings
+├── astc-compression-data.json       # Presets by texture type
 ├── assets/
-│   └── shared/images/            # Source PNG images
-├── assets/images-astc/            # Generated ASTC textures (Android)
-├── assets/images-bc/             # Generated BC textures (Windows)
-├── gpu_texture_generator/         # Conversion tools
-│   ├── build.sh                  # Bash script for NDK
-│   └── generate_gpu_textures.py  # Python converter
+│   └── shared/images/              # Source PNG images
+├── assets/images-compressed/        # Compressed textures (.astc)
+├── assets/images-base/            # Fallback PNGs
+├── gpu_texture_generator/          # Conversion tools
+│   ├── build.sh
+│   └── generate_gpu_textures.py
 └── source/
     └── backend/
         └── gpu/
             └── GPUTextureLoader.hx  # Helper utilities
 ```
 
-## Texture Formats
+## Supported Formats
 
-| Platform | Format | Extension | Asset Path |
-|----------|--------|-----------|------------|
-| Android | ASTC | .astc | assets/images-astc/ |
-| Windows | BC/DXT | .dds | assets/images-bc/ |
-| Other | PNG | .png | assets/images-png/ |
+| Platform | Format | Extension | Asset Folder |
+|----------|--------|-----------|--------------|
+| Android | ASTC | .astc | images-compressed |
+| iOS | ASTC | .astc | images-compressed |
+| Windows | BC/DXT | .dds | images-compressed |
+| Other | PNG | .png | images-base |
 
 ## Block Sizes (ASTC)
 
-| Size | Ratio | Use Case |
-|------|-------|----------|
+| Size | Compression | Best For |
+|------|-------------|----------|
 | 4x4 | 8:1 | UI, icons |
 | 5x5 | 12:1 | Characters |
-| 6x6 | 16:1 | General (recommended) |
+| 6x6 | 16:1 | General (default) |
 | 8x8 | 32:1 | Backgrounds |
 
 ## Code Usage
@@ -78,13 +77,10 @@ WashosEngine/
 ### Paths.hx
 
 ```haxe
-// Check if GPU textures are enabled
-if (Paths.shouldUseGPUTextures()) {
-    trace('Using GPU compressed textures');
+// Check if compressed textures are enabled
+if (Paths.isCompressedTexturesEnabled()) {
+    trace('Using: ' + Paths.getCompressedTextureFormat());
 }
-
-// Get current format
-var format = Paths.GPU_TEXTURE_FORMAT; // "astc", "bc", or "png"
 ```
 
 ### GPUTextureLoader
@@ -93,43 +89,40 @@ var format = Paths.GPU_TEXTURE_FORMAT; // "astc", "bc", or "png"
 #if android
 import backend.gpu.GPUTextureLoader;
 
-// Check if enabled
-if (GPUTextureLoader.isEnabled()) {
-    var format = GPUTextureLoader.getCurrentFormat(); // "ASTC"
-    var suffix = GPUTextureLoader.getAssetPathSuffix(); // "-astc"
+// Check status
+if (GPUTextureLoader.isActive()) {
+    var format = GPUTextureLoader.getActiveFormat(); // "ASTC"
+    var suffix = GPUTextureLoader.getFolderSuffix(); // "-compressed"
 }
 
-// Preload texture
+// Pre-cache texture
 var tex = GPUTextureLoader.preload('assets/shared/images/note');
 #end
 ```
 
-## Asset Path Configuration
+## Mods Support
 
-In **Project.xml**, asset paths are configured like this:
+Mods can include their own compressed textures. Place `.astc` files in:
 
-```xml
-<!-- GPU Texture Format Assets -->
-<assets path="assets/images-astc" rename="assets/shared/images" if="android"/>
-<assets path="assets/images-bc"   rename="assets/shared/images" if="windows"/>
-<assets path="assets/images-png"  rename="assets/shared/images" />
+```
+mods/[mod-name]/images/[texture-name].astc
 ```
 
-OpenFL checks paths in order - if `assets/images-astc/note.png.astc` exists, it's loaded instead of the PNG.
+The engine checks mod directories first, then falls back to base assets.
 
 ## Conversion Tool Usage
 
 ```bash
-# Convert all textures to ASTC (6x6 blocks, medium quality)
-python generate_gpu_textures.py -i ../assets -o ../assets/images-astc -f ASTC
+# Convert all textures to ASTC
+python generate_gpu_textures.py -i ../assets -o ../assets/images-compressed -f ASTC
 
-# With custom settings
-python generate_gpu_textures.py -i ../assets -o ../assets/images-astc -b 5x5 -q thorough
+# Custom settings
+python generate_gpu_textures.py -i ../assets -o ../assets/images-compressed -b 5x5 -q thorough
 ```
 
-## Compression Configuration
+## Configuration
 
-Edit `astc-compression-data.json`:
+Edit `astc-compression-data.json` for texture-specific settings:
 
 ```json
 {
@@ -152,21 +145,13 @@ Edit `astc-compression-data.json`:
 
 ## Troubleshooting
 
-### Textures not loading as ASTC
+### Compressed textures not loading
 
-1. Verify `assets/images-astc/` contains `.astc` files
-2. Check that `USING_GPU_TEXTURES` haxedef is set in Project.xml
-3. Ensure asset paths are correctly configured
+1. Verify `.astc` files exist in `assets/images-compressed/`
+2. Check `USING_GPU_TEXTURES` flag in Project.xml
+3. Ensure asset paths are correctly ordered (compressed before base)
 
-### Build errors
+### Mod textures not working
 
-Make sure Android NDK is installed for astcenc:
-```bash
-export ANDROID_NDK_ROOT=~/Android/Sdk/ndk/26.1.10909125
-```
-
-## References
-
-- [Shadow Engine](https://github.com/ShadowEngineTeam/FNF-Shadow-Engine)
-- [Funkin Crew](https://github.com/FunkinCrew/funkin)
-- [ASTC Encoder](https://github.com/ARM-software/astc-encoder)
+Place mod compressed textures in:
+`mods/[mod-name]/images/[name].astc`

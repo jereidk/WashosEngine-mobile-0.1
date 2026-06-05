@@ -1,10 +1,10 @@
 {
-	"textureFormats": ["ASTC", "BC"],
-	"textureQuality": {
+	"supportedFormats": ["ASTC", "BC"],
+	"compressionPresets": {
 		"ASTC": "6x6",
 		"BC": "high"
 	},
-	"compressionOptions": {
+	"conversionSettings": {
 		"ASTC": {
 			"blockSize": "6x6",
 			"quality": "medium"
@@ -13,9 +13,9 @@
 			"quality": "high"
 		}
 	},
-	"assetPaths": {
-		"ASTC": "assets/images-astc",
-		"BC": "assets/images-bc",
-		"PNG": "assets/images-png"
+	"assetFolders": {
+		"ASTC": "assets/images-compressed",
+		"BC": "assets/images-compressed",
+		"PNG": "assets/images-base"
 	}
 }

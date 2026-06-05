@@ -29,34 +29,35 @@ class Paths
 	inline public static var SOUND_EXT = #if web "mp3" #else "ogg" #end;
 	inline public static var VIDEO_EXT = "mp4";
 	
-	// GPU Texture Format Support (Shadow Engine style)
-	// When USING_GPU_TEXTURES is defined, OpenFL automatically loads from format-specific folders
-	#if (android && USING_GPU_TEXTURES)
-	public static var GPU_TEXTURE_FORMAT:String = "astc";
-	#elseif (windows && USING_GPU_TEXTURES)
-	public static var GPU_TEXTURE_FORMAT:String = "bc";
+	// Compressed texture support for mobile/desktop
+	// Uses platform-specific GPU texture formats when available
+	#if android
+	public static var TEXTURE_COMPRESSION_ENABLED:Bool = true;
+	public static var COMPRESSED_TEXTURE_FORMAT:String = "astc";
+	#elseif windows
+	public static var TEXTURE_COMPRESSION_ENABLED:Bool = false;
+	public static var COMPRESSED_TEXTURE_FORMAT:String = "bc";
 	#else
-	public static var GPU_TEXTURE_FORMAT:String = "png";
+	public static var TEXTURE_COMPRESSION_ENABLED:Bool = false;
+	public static var COMPRESSED_TEXTURE_FORMAT:String = "png";
 	#end
 	
 	/**
-	 * Get the current GPU texture format for asset paths.
-	 * Returns "astc", "bc", or "png" based on platform and build settings.
+	 * Check if compressed textures are enabled for this platform.
 	 */
-	inline static public function getGPUTextureFormat():String {
-		return GPU_TEXTURE_FORMAT;
-	}
-	
-	/**
-	 * Check if GPU compressed textures should be used.
-	 * This is set via -D USING_GPU_TEXTURES in project.hxp
-	 */
-	inline static public function shouldUseGPUTextures():Bool {
+	inline static public function isCompressedTexturesEnabled():Bool {
 		#if USING_GPU_TEXTURES
 		return true;
 		#else
 		return false;
 		#end
+	}
+	
+	/**
+	 * Get the current compressed texture format.
+	 */
+	inline static public function getCompressedTextureFormat():String {
+		return COMPRESSED_TEXTURE_FORMAT;
 	}
 
 	public static function excludeAsset(key:String) {
@@ -271,22 +272,64 @@ class Paths
 			return currentTrackedAssets.get(key);
 		}
 		
-		// Check for ASTC pre-compressed texture on Android
-		#if android
-		if (ASTC_ENABLED) {
-			var astcKey = key + '.astc';
-			var astcPath = getPath(key + '.astc', IMAGE, parentFolder, true);
-			#if MODS_ALLOWED
-			if (FileSystem.exists(astcPath)) {
-				trace('Loading ASTC texture: $astcPath');
-				// For now, fall through to PNG loading if ASTC not fully implemented
-				// Full ASTC loading would require native texture decoder
-			}
-			#end
-		}
+		// Try loading compressed texture first on supported platforms
+		#if (android && USING_GPU_TEXTURES)
+		bitmap = tryLoadCompressedImage(key, parentFolder);
 		#end
 		
 		return cacheBitmap(key, parentFolder, bitmap, allowGPU);
+	}
+	
+	/**
+	 * Try to load a compressed texture (.astc on Android).
+	 * Checks mod directories first, then base assets.
+	 */
+	static function tryLoadCompressedImage(key:String, ?parentFolder:String):BitmapData
+	{
+		#if (android && USING_GPU_TEXTURES)
+		var compressedKey = key + '.astc';
+		
+		// Try in mod directories first
+		#if MODS_ALLOWED
+		var modPaths = Mods.getModDirectories();
+		for (mod in modPaths)
+		{
+			var modImgPath = 'mods/$mod/images/$compressedKey';
+			if (FileSystem.exists(modImgPath))
+			{
+				try {
+					var tex = BitmapData.fromFile(modImgPath);
+					if (tex != null) {
+						trace('Loaded compressed texture from mod: $modImgPath');
+						return tex;
+					}
+				} catch (e:Dynamic) {
+					// Fall through to next option
+				}
+			}
+		}
+		#end
+		
+		// Try in compressed assets folder
+		var compressedPath = 'assets/images-compressed/$compressedKey';
+		if (FileSystem.exists(compressedPath))
+		{
+			try {
+				var tex = BitmapData.fromFile(compressedPath);
+				if (tex != null) {
+					trace('Loaded compressed texture: $compressedPath');
+					return tex;
+				}
+			} catch (e:Dynamic) {
+				// Fall through to PNG loading
+			}
+		}
+		#end
+		
+		return null;
+		#else
+		return null;
+		#end
 	}
 
 	public static function cacheBitmap(key:String, ?parentFolder:String = null, ?bitmap:BitmapData, ?allowGPU:Bool = true):FlxGraphic

@@ -54,12 +54,12 @@
 	<assets path="assets/week_assets"   rename="assets" exclude="*.ogg" if="web"/>
 	<assets path="assets/week_assets"   rename="assets" exclude="*.mp3" unless="web"/>
 		
-		<!-- GPU Texture Format Assets (Shadow Engine style) -->
-		<!-- ASTC textures override PNG when available -->
-		<assets path="assets/images-astc"   rename="assets/shared/images" unless="windows" if="android"/>
-		<assets path="assets/images-astc"   rename="assets/shared/images" if="ios"/>
-		<assets path="assets/images-bc"      rename="assets/shared/images" if="windows"/>
-		<assets path="assets/images-png"    rename="assets/shared/images" />
+		<!-- Compressed Texture Assets -->
+		<!-- When compressed textures are available, they load instead of base PNGs -->
+		<assets path="assets/images-compressed"   rename="assets/shared/images" unless="windows" if="android"/>
+		<assets path="assets/images-compressed"   rename="assets/shared/images" if="ios"/>
+		<assets path="assets/images-compressed"   rename="assets/shared/images" if="windows"/>
+		<assets path="assets/images-base"         rename="assets/shared/images" />
 	<section if="TITLE_SCREEN_EASTER_EGG">
 		<assets path="assets/secrets" rename="assets/shared" exclude="*.ogg" if="web"/>
 		<assets path="assets/secrets" rename="assets/shared" exclude="*.mp3"  unless="web"/>
