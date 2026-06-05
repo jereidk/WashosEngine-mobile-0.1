@@ -57,18 +57,8 @@ jobs:
           echo "=== Starting Haxe Dependencies Installation ==="
           haxelib setup ~/haxelib || true
           
-          # Check if lime command works (not just installed)
+          # The macOS runners have lime pre-installed, don't try to install it
           echo "Checking lime status..."
-          if haxelib run lime version >/dev/null 2>&1; then
-            echo "Lime command works, skipping installation"
-          else
-            echo "Lime not working, attempting to fix..."
-            # Try to reinstall lime
-            haxelib install lime 8.2.0 2>/dev/null || haxelib install lime 2>/dev/null || true
-          fi
-          
-          # Verify lime is installed
-          echo "Verifying lime..."
           haxelib list | head -20
           
           # Install other dependencies (skip if already installed)
@@ -92,13 +82,6 @@ jobs:
           
           echo "=== Installed libraries ==="
           haxelib list
-
-      - name: Run Custom Setup Script
-        run: |
-          echo "Running custom setup..."
-          # Skip mobile.sh if it might cause issues
-          echo "Skipping mobile.sh to avoid interactive prompts"
-          true
 
       - name: Verify Lime
         run: |
@@ -144,18 +127,8 @@ jobs:
           echo "=== Starting Haxe Dependencies Installation ==="
           haxelib setup ~/haxelib || true
           
-          # Check if lime command works (not just installed)
+          # The macOS runners have lime pre-installed, don't try to install it
           echo "Checking lime status..."
-          if haxelib run lime version >/dev/null 2>&1; then
-            echo "Lime command works, skipping installation"
-          else
-            echo "Lime not working, attempting to fix..."
-            # Try to reinstall lime
-            haxelib install lime 8.2.0 2>/dev/null || haxelib install lime 2>/dev/null || true
-          fi
-          
-          # Verify lime is installed
-          echo "Verifying lime..."
           haxelib list | head -20
           
           # Install other dependencies (skip if already installed)
@@ -178,13 +151,6 @@ jobs:
           
           echo "=== Installed libraries ==="
           haxelib list
-
-      - name: Run Custom Setup Script
-        run: |
-          echo "Running custom setup..."
-          # Skip mobile.sh if it might cause issues
-          echo "Skipping mobile.sh to avoid interactive prompts"
-          true
 
       - name: Verify Lime
         run: |
