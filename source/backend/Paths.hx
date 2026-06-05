@@ -29,13 +29,26 @@ class Paths
 	inline public static var SOUND_EXT = #if web "mp3" #else "ogg" #end;
 	inline public static var VIDEO_EXT = "mp4";
 	
-	// ASTC texture support
+	// ASTC texture support (matching project.hxp and hx-astcenc approach)
 	#if android
 	public static var ASTC_ENABLED:Bool = true;
-	public static var ASTC_BLOCK_SIZE:String = "6x6"; // 6x6 = good quality, 8x8 = smaller files
+	public static var ASTC_BLOCK_SIZE:String = "6x6";
+	public static var USING_GPU_TEXTURES:Bool = true;
 	#else
 	public static var ASTC_ENABLED:Bool = false;
 	public static var ASTC_BLOCK_SIZE:String = "6x6";
+	public static var USING_GPU_TEXTURES:Bool = false;
+	#end
+	
+	// Texture format constants (from project.hxp)
+	public static inline var FORMAT_ASTC:String = "ASTC";
+	public static inline var FORMAT_BC:String = "BC";
+	public static inline var FORMAT_DXT5:String = "DXT5";
+	public static inline var FORMAT_ETC1:String = "ETC1";
+	
+	// Initialize GPU texture loader
+	#if android
+	static var gpuLoaderInitialized:Bool = false;
 	#end
 	
 	// Helper to find ASTC version of a file
@@ -47,9 +60,21 @@ class Paths
 		#if MODS_ALLOWED
 		if (FileSystem.exists(astcPath)) return astcPath;
 		#end
+		// Also check in assets-gpu/astc/ folder
+		var gpuAstcPath = 'assets-gpu/astc/' + key + '.astc';
+		if (FileSystem.exists(gpuAstcPath)) return gpuAstcPath;
 		return null;
 		#else
 		return null;
+		#end
+	}
+	
+	// Check if GPU texture loading should be used
+	inline static public function shouldUseGPUTextures():Bool {
+		#if android
+		return USING_GPU_TEXTURES && ASTC_ENABLED;
+		#else
+		return false;
 		#end
 	}
 

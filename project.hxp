@@ -1,0 +1,21 @@
+{
+	"textureFormats": ["ASTC", "BC", "DXT5", "ETC1"],
+	"textureQuality": {
+		"ASTC": "6x6",
+		"BC": "high",
+		"DXT5": "medium",
+		"ETC1": "normal"
+	},
+	"compressionOptions": {
+		"ASTC": {
+			"blockSize": "6x6",
+			"quality": "medium",
+			"premultiply": true
+		},
+		"BC": {
+			"quality": "high"
+		}
+	},
+	"enableGPUTextures": true,
+	"fallbackToPNG": true
+}

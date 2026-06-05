@@ -1,0 +1,115 @@
+{
+	"version": "1.0.0",
+	"description": "ASTC texture compression configuration for WashosEngine",
+	"engine": "WashosEngine",
+	"format": "ASTC",
+	"blockSizes": {
+		"4x4": {
+			"description": "Highest quality, larger file size",
+			"compressionRatio": "8:1",
+			"useCases": ["UI elements", "characters", "important sprites"]
+		},
+		"5x5": {
+			"description": "High quality, medium file size",
+			"compressionRatio": "12:1",
+			"useCases": ["backgrounds", "menus"]
+		},
+		"6x6": {
+			"description": "Balanced quality/size (recommended)",
+			"compressionRatio": "16:1",
+			"useCases": ["general textures", "notes", "effects"]
+		},
+		"8x8": {
+			"description": "Smallest file size, lowest quality",
+			"compressionRatio": "32:1",
+			"useCases": ["large backgrounds", "parallax layers"]
+		}
+	},
+	"qualityPresets": {
+		"fast": {
+			"description": "Fast compression, lower quality",
+			"astcencFlags": "-fast",
+			"estimatedTime": "1-2s per texture"
+		},
+		"medium": {
+			"description": "Balanced compression (recommended)",
+			"astcencFlags": "-medium",
+			"estimatedTime": "3-5s per texture"
+		},
+		"thorough": {
+			"description": "High quality, slower compression",
+			"astcencFlags": "-thorough",
+			"estimatedTime": "10-20s per texture"
+		},
+		"exhaustive": {
+			"description": "Best possible quality, very slow",
+			"astcencFlags": "-exhaustive",
+			"estimatedTime": "60s+ per texture"
+		}
+	},
+	"defaultSettings": {
+		"blockSize": "6x6",
+		"quality": "medium",
+		"premultiplyAlpha": true,
+		"ignorePatterns": [
+			"**/fonts/**",
+			"**/music/**",
+			"**/sounds/**",
+			"**/videos/**"
+		],
+		"minTextureSize": 64,
+		"maxTextureSize": 4096
+	},
+	"textureCategories": {
+		"notes": {
+			"pattern": "**/noteSkins/**",
+			"blockSize": "6x6",
+			"quality": "thorough",
+			"priority": "high"
+		},
+		"characters": {
+			"pattern": "**/characters/**",
+			"blockSize": "5x5",
+			"quality": "thorough",
+			"priority": "high"
+		},
+		"stages": {
+			"pattern": "**/stages/**",
+			"blockSize": "8x8",
+			"quality": "medium",
+			"priority": "medium"
+		},
+		"ui": {
+			"pattern": "**/ui/**",
+			"blockSize": "6x6",
+			"quality": "medium",
+			"priority": "medium"
+		},
+		"icons": {
+			"pattern": "**/icons/**",
+			"blockSize": "4x4",
+			"quality": "exhaustive",
+			"priority": "high"
+		}
+	},
+	"custom": [
+		{
+			"name": "default",
+			"path": "**/*",
+			"blockSize": "6x6",
+			"quality": "medium"
+		}
+	],
+	"conversionRules": {
+		"priorityOrder": ["icons", "notes", "characters", "ui", "stages"],
+		"skipTransparency": false,
+		"preserveAspectRatio": true,
+		"generateMipmaps": true
+	},
+	"outputSettings": {
+		"outputFormat": "astc",
+		"namingConvention": "${originalName}.astc",
+		"preserveOriginals": true,
+		"generateManifest": true
+	}
+}
