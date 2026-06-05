@@ -338,14 +338,11 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  Generate ASTC textures:
-    python generate_gpu_textures.py -i assets/images -o assets-astc -f ASTC
+  Convert all textures to compressed format:
+    python generate_gpu_textures.py -i ../assets -o ../assets/images-compressed -f ASTC
     
-  Generate with config:
-    python generate_gpu_textures.py -i assets -o assets-gpu -f ASTC -c ../astc-compression-data.json
-    
-  High quality conversion:
-    python generate_gpu_textures.py -i assets -o assets-gpu -f ASTC -q exhaustive
+  Custom settings:
+    python generate_gpu_textures.py -i ../assets -o ../assets/images-compressed -b 5x5 -q thorough
         """
     )
     

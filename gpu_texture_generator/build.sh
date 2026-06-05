@@ -39,10 +39,10 @@ echo ""
 
 # Create output directories
 ASSETS_DIR="$PROJECT_DIR/assets"
-GPU_OUTPUT="$PROJECT_DIR/assets-gpu"
-ASTC_OUTPUT="$GPU_OUTPUT/astc"
+COMPRESSED_OUTPUT="$PROJECT_DIR/assets/images-compressed"
+BASE_OUTPUT="$PROJECT_DIR/assets/images-base"
 
-mkdir -p "$ASTC_OUTPUT"
+mkdir -p "$COMPRESSED_OUTPUT"
 
 # Function to convert a single image
 convert_image() {
@@ -111,7 +111,7 @@ while IFS= read -r file; do
     
     # Calculate relative path
     rel_path="${file#$ASSETS_DIR/}"
-    output_file="$ASTC_OUTPUT/$rel_path.astc"
+    output_file="$COMPRESSED_OUTPUT/$rel_path.astc"
     output_dir="$(dirname "$output_file")"
     
     mkdir -p "$output_dir"
@@ -139,7 +139,7 @@ echo ""
 
 # Generate manifest
 echo -e "${YELLOW}Generating manifest...${NC}"
-MANIFEST_FILE="$ASTC_OUTPUT/astc_manifest.json"
+MANIFEST_FILE="$COMPRESSED_OUTPUT/astc_manifest.json"
 echo "{" > "$MANIFEST_FILE"
 echo '  "version": "1.0.0",' >> "$MANIFEST_FILE"
 echo '  "engine": "WashosEngine",' >> "$MANIFEST_FILE"
@@ -149,7 +149,7 @@ echo '  "textures": [' >> "$MANIFEST_FILE"
 FIRST=true
 while IFS= read -r file; do
     rel_path="${file#$ASSETS_DIR/}"
-    astc_file="$ASTC_OUTPUT/$rel_path.astc"
+    astc_file="$COMPRESSED_OUTPUT/$rel_path.astc"
     [ ! -f "$astc_file" ] && continue
     
     size=$(stat -c%s "$astc_file" 2>/dev/null || echo "0")
@@ -176,7 +176,7 @@ TOTAL_ASTC=0
 
 while IFS= read -r file; do
     rel_path="${file#$ASSETS_DIR/}"
-    astc_file="$ASTC_OUTPUT/$rel_path.astc"
+    astc_file="$COMPRESSED_OUTPUT/$rel_path.astc"
     [ -f "$astc_file" ] && [ -f "$file" ] && {
         TOTAL_ORIG=$((TOTAL_ORIG + $(stat -c%s "$file" 2>/dev/null || echo "0")))
         TOTAL_ASTC=$((TOTAL_ASTC + $(stat -c%s "$astc_file" 2>/dev/null || echo "0")))
@@ -190,12 +190,12 @@ echo -e "${BLUE}Summary:${NC}"
 echo "  Original size: $((TOTAL_ORIG / 1024))KB"
 echo "  ASTC size: $((TOTAL_ASTC / 1024))KB"
 echo "  Space saved: ${SAVINGS}%"
-echo "  Output: $ASTC_OUTPUT"
+echo "  Output: $COMPRESSED_OUTPUT"
 echo "=========================================="
 echo ""
 echo -e "${GREEN}GPU texture generation complete!${NC}"
 echo ""
 echo "To build with ASTC textures:"
-echo "  1. Copy contents of $ASTC_OUTPUT to your Android assets folder"
-echo "  2. Or set ANDROID_ASSETS_PATH=$ASTC_OUTPUT when building"
+echo "  1. Copy contents of $COMPRESSED_OUTPUT to your Android assets folder"
+echo "  2. Or set ANDROID_ASSETS_PATH=$COMPRESSED_OUTPUT when building"
 echo ""
