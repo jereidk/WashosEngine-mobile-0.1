@@ -36,17 +36,23 @@ jobs:
           
           # Create/update lime haxelib.json with correct version for flixel compatibility
           echo "Creating lime haxelib.json with version 8.3.1..."
-          mkdir -p ~/.haxelib/lime
-          printf '{\n  "name": "lime",\n  "url": "https://github.com/openfl/lime",\n  "license": "MIT",\n  "tags": [],\n  "description": "A foundational Haxe framework for cross-platform development",\n  "version": "8.3.1",\n  "releasenote": "Various bug fixes",\n  "contributors": ["singmajesty","bowlerhat","Dimensionscape"],\n  "classPath": "src"\n}\n' > ~/.haxelib/lime/haxelib.json
-          echo "=== Created ~/.haxelib/lime/haxelib.json ==="
-          cat ~/.haxelib/lime/haxelib.json
+          # Find the actual haxelib directory
+          HAXELIB_PATH=$(haxelib path lime 2>/dev/null | grep -v "^$" | head -1)
+          LIME_DIR=$(dirname $(dirname "$HAXELIB_PATH"))
+          echo "Lime directory: $LIME_DIR"
+          mkdir -p "$LIME_DIR"
+          printf '{\n  "name": "lime",\n  "url": "https://github.com/openfl/lime",\n  "license": "MIT",\n  "tags": [],\n  "description": "A foundational Haxe framework for cross-platform development",\n  "version": "8.3.1",\n  "releasenote": "Various bug fixes",\n  "contributors": ["singmajesty","bowlerhat","Dimensionscape"],\n  "classPath": "src"\n}\n' > "$LIME_DIR/haxelib.json"
+          echo "=== Created $LIME_DIR/haxelib.json ==="
+          cat "$LIME_DIR/haxelib.json"
 
       - name: Configure Android
         run: |
           echo "Checking lime version..."
           haxelib list lime
-          cat ~/.haxelib/lime/haxelib.json 2>/dev/null | head -5 || echo "No haxelib.json found"
-          cat .haxelib/lime/haxelib.json 2>/dev/null | head -5 || echo "No project haxelib.json found"
+          HAXELIB_PATH=$(haxelib path lime 2>/dev/null | grep -v "^$" | head -1)
+          LIME_DIR=$(dirname $(dirname "$HAXELIB_PATH"))
+          echo "Lime directory: $LIME_DIR"
+          cat "$LIME_DIR/haxelib.json" 2>/dev/null | head -5 || echo "No haxelib.json found"
           haxelib run lime config ANDROID_SDK $ANDROID_HOME
           haxelib run lime config ANDROID_NDK_ROOT $ANDROID_NDK_LATEST_HOME
           haxelib run lime config JAVA_HOME $JAVA_HOME_21_arm64
