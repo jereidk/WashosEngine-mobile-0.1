@@ -233,7 +233,7 @@ class BeatSync
         // Tween de vuelta al original
         tween.sprite.tween(
             tween.sprite,
-            cast {tween.property: tween.targetValue},
+            {tween.property: tween.targetValue},
             tween.durationSeconds,
             {ease: tween.ease, type: FlxTweenType.ONESHOT}
         );
@@ -593,7 +593,7 @@ class BeatSync
         // Tween de vuelta al original
         tween.sprite.tween(
             tween.sprite,
-            cast {tween.property: tween.targetValue},
+            {tween.property: tween.targetValue},
             tween.durationSeconds,
             {ease: tween.ease, type: FlxTweenType.ONESHOT}
         );
