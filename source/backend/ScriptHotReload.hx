@@ -213,7 +213,7 @@ class ScriptHotReload
     public function update(elapsed:Float):Void
     {
         if (!watchingEnabled) return;
-        if (watchedScripts.keys().length == 0) return;
+        if (Lambda.count(watchedScripts) == 0) return;
         
         checkTimer += elapsed;
         
@@ -282,7 +282,7 @@ class ScriptHotReload
         // Guardar estado importante (si existe el método)
         var scriptState:Dynamic = null;
         try {
-            if (Reflect.hasMethod(oldLua, 'getState')) {
+            if (Reflect.hasField(oldLua, 'getState') && Reflect.isFunction(Reflect.field(oldLua, 'getState'))) {
                 scriptState = oldLua.getState();
             }
         } catch (e:Dynamic) {}
@@ -355,7 +355,7 @@ class ScriptHotReload
         }
         
         #if debug
-        trace('[ScriptHotReload] Reloaded ' + reloaded + ' of ' + watchedScripts.keys().length + ' scripts');
+        trace('[ScriptHotReload] Reloaded ' + reloaded + ' of ' + Lambda.count(watchedScripts) + ' scripts');
         #end
         
         return reloaded;
@@ -392,8 +392,8 @@ class ScriptHotReload
     {
         return {
             watchingEnabled: watchingEnabled,
-            totalScripts: watchedScripts.keys().length,
-            activeScripts: activeScripts.keys().length,
+            totalScripts: Lambda.count(watchedScripts),
+            activeScripts: Lambda.count(activeScripts),
             checkInterval: checkInterval
         };
     }

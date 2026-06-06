@@ -5,6 +5,7 @@ import flixel.FlxSprite;
 import flixel.group.FlxGroup;
 import flixel.math.FlxPoint;
 import flixel.util.FlxColor;
+import backend.Particle.ParticleConfig;
 
 
 /**
@@ -396,7 +397,7 @@ class ParticleEmitter extends FlxBasic
         var angularVel = FlxG.random.float(angularVelocityMin, angularVelocityMax);
         
         // Crear config
-        var config:ParticleEmitter.ParticleConfig = {
+        var config:ParticleConfig = {
             x: px,
             y: py,
             vx: vx,
@@ -501,7 +502,7 @@ class ParticleEmitter extends FlxBasic
             var vx = Math.cos(a * Math.PI / 180) * speed;
             var vy = Math.sin(a * Math.PI / 180) * speed;
             
-            var config:ParticleEmitter.ParticleConfig = {
+            var config:ParticleConfig = {
                 x: x + FlxG.random.float(0, width),
                 y: y + FlxG.random.float(0, height),
                 vx: vx,

@@ -535,7 +535,7 @@ class Paths
 		var result = hideChars.replace(invalidChars.replace(path, '-'), '').trim().toLowerCase();
 		
 		// Limit cache size to prevent memory issues
-		if (_songPathCache.size < 10000) {
+		if (Lambda.count(_songPathCache) < 10000) {
 			_songPathCache.set(path, result);
 		}
 		return result;
