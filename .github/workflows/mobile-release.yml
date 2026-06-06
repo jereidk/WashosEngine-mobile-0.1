@@ -26,18 +26,13 @@ jobs:
       - name: Install Libraries
         shell: bash
         run: |
-          # Setup local haxelib repo
+          # Setup haxelib properly
+          haxelib setup ~/haxelib 2>/dev/null || true
           haxelib newrepo 2>/dev/null || true
           
           # Install hmm first
           haxelib git hmm https://github.com/ShadowEngineTeam/hmm --skip-dependencies --quiet
           haxelib run hmm install --quiet
-          
-          # Verify grig.audio is installed
-          echo "=== Checking grig.audio ==="
-          haxelib list | grep grig
-          ls -la ~/haxelib/grig* 2>/dev/null || echo "Not in ~/haxelib"
-          find . -name "grig*" -type d 2>/dev/null | head -5
 
       - name: Configure Android
         run: |
@@ -49,15 +44,19 @@ jobs:
       - name: Compile
         shell: bash
         run: |
-          # Add local repo to path
-          export HAXELIB_PATH="$(pwd)/.haxelib:$HAXELIB_PATH"
-          echo "=== HAXELIB_PATH ==="
-          echo $HAXELIB_PATH
+          # Set HAXELIB_PATH to include both local and global repos
+          export HAXELIB_PATH="$(pwd)/.haxelib:$HOME/haxelib"
+          echo "HAXELIB_PATH=$HAXELIB_PATH"
           
-          # Debug: list all haxe libs
-          echo "=== Available Libraries ==="
+          # Verify libraries are found
+          echo "=== Library Paths ==="
+          find ~/haxelib -name "*.hx" -path "*grig*" 2>/dev/null | head -5
+          find .haxelib -name "*.hx" -path "*grig*" 2>/dev/null | head -5
+          
+          # List all haxelibs
+          echo "=== All Libraries ==="
           haxelib list
-          
+
           haxelib run lime build android -final -D officialBuild -D ASTC
 
       - name: Upload Artifact
