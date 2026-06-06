@@ -1,6 +1,16 @@
 {
   "dependencies": [
     {
+      "name": "flixel",
+      "type": "haxelib",
+      "version": "5.9.2"
+    },
+    {
+      "name": "flixel-addons",
+      "type": "haxelib",
+      "version": "3.0.1"
+    },
+    {
       "name": "lime",
       "type": "git",
       "ref": "543368c85c496d8b968d8295e528c76a06f8bdf9",
@@ -11,18 +21,6 @@
       "type": "git",
       "ref": "5d33fb36dce7a82ed5782a60c0c24640b7f81591",
       "url": "https://github.com/ShadowEngineTeam/openfl"
-    },
-    {
-      "name": "flixel",
-      "type": "git",
-      "ref": "0eb0a03d56f23b3214768b099d0d78dbf9a23711",
-      "url": "https://github.com/ShadowEngineTeam/flixel"
-    },
-    {
-      "name": "flixel-addons",
-      "type": "git",
-      "ref": "7628435364c4a45440d1e5db656741b66a8cd2ec",
-      "url": "https://github.com/FunkinCrew/flixel-addons"
     },
     {
       "name": "hxcpp",
