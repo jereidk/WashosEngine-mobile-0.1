@@ -1,155 +1,121 @@
 <?xml version="1.0" encoding="utf-8"?>
 <project>
-	<app title="WashosEngine" file="WashosEngine" packageName="com.shadowmario.washosengine" package="com.shadowmario.washosengine" main="Main" version="0.2.8" company="ShadowMario" />
+<app title="WashosEngine" file="WashosEngine" packageName="com.shadowmario.washosengine" package="com.shadowmario.washosengine" main="Main" version="0.2.8" company="ShadowMario" />
 
-	<set name="APP_ID" value="0x0100f6c013bbc000" />
+<set name="APP_ID" value="0x0100f6c013bbc000" />
 
-	
-        <haxedef name="HXCPP_ARM64" if="android"/>
-        <haxedef name="HXCPP_ARMV7" value="0" if="android"/> 
-        <haxedef name="USING_GPU_TEXTURES" if="android"/>
-        <app preloader="flixel.system.FlxPreloader" />
+<haxedef name="HXCPP_ARM64" if="android"/>
+<haxedef name="HXCPP_ARMV7" value="0" if="android"/>
+<haxedef name="USING_GPU_TEXTURES" if="android"/>
+<app preloader="flixel.system.FlxPreloader" />
 
-	<set name="SWF_VERSION" value="11.8" />
-	
-	<define name="MODS_ALLOWED" if="desktop || mobile" />
-	<define name="HSCRIPT_ALLOWED" if="desktop || mobile" />
-	<define name="LUA_ALLOWED" if="cpp" />
-	<define name="ACHIEVEMENTS_ALLOWED" />
-	<define name="DISCORD_ALLOWED" if="desktop" />
-	<define name="TRANSLATIONS_ALLOWED" />
-	<define name="COPYSTATE_ALLOWED" if="MODS_ALLOWED mobile"/>
-	<define name="IRIS_DEBUG"/>
-	
-	<define name="FLX_OBJECT_POOL" if="desktop || mobile"/>
-	
-	<define name="MULTITHREADED_LOADING" if="cpp" /> <define name="SHOW_LOADING_SCREEN" />
-	<define name="PSYCH_WATERMARKS"/> <section if="officialBuild">
-		<define name="TITLE_SCREEN_EASTER_EGG"/>
-		<define name="BASE_GAME_FILES" />
-		<define name="VIDEOS_ALLOWED" if="desktop || mobile" unless="32bits"/> </section>
+<set name="SWF_VERSION" value="11.8" />
 
-	<window width="1280" height="720" fps="60" background="#000000" hardware="true" vsync="false" allow-high-dpi="true" />
+<define name="MODS_ALLOWED" if="mobile" />
+<define name="HSCRIPT_ALLOWED" if="mobile" />
+<define name="LUA_ALLOWED" if="cpp" />
+<define name="ACHIEVEMENTS_ALLOWED" />
+<define name="TRANSLATIONS_ALLOWED" />
+<define name="COPYSTATE_ALLOWED" if="MODS_ALLOWED mobile"/>
+<define name="IRIS_DEBUG"/>
 
-	<window if="html5" resizable="true" />
+<define name="FLX_OBJECT_POOL" if="mobile"/>
 
-	<window if="desktop" orientation="landscape" fullscreen="false" resizable="true" vsync="false"/>
+<define name="MULTITHREADED_LOADING" if="cpp" />
+<define name="SHOW_LOADING_SCREEN" />
+<define name="PSYCH_WATERMARKS"/>
 
-	<window if="mobile" orientation="landscape" fullscreen="true" resizable="false" allow-shaders="true" require-shaders="true" />
+<section if="officialBuild">
+<define name="TITLE_SCREEN_EASTER_EGG"/>
+<define name="BASE_GAME_FILES" />
+<define name="VIDEOS_ALLOWED" if="mobile"/>
+</section>
 
-	<window if="switch" orientation="landscape" fullscreen="true" width="0" height="0" resizable="true" />
+<window width="1280" height="720" fps="60" background="#000000" hardware="true" vsync="false" allow-high-dpi="true" if="android" />
 
-	<set name="BUILD_DIR" value="export/debug" if="debug" />
-	<set name="BUILD_DIR" value="export/release" unless="debug" />
-	<set name="BUILD_DIR" value="export/32bit" if="32bits" />
+<window if="mobile" orientation="landscape" fullscreen="true" resizable="false" allow-shaders="true" require-shaders="true" />
 
-	<classpath name="source" />
+<set name="BUILD_DIR" value="export/debug" if="debug" />
+<set name="BUILD_DIR" value="export/release" unless="debug" />
 
-	<assets path="assets/fonts" />
-	<assets path="assets/shared"        exclude="*.ogg" if="web"/>
-	<assets path="assets/shared"        exclude="*.mp3" unless="web"/>
-	<assets path="assets/embed"         exclude="*.ogg" if="web" embed="true"/>
-	<assets path="assets/embed"         exclude="*.mp3" unless="web" embed="true"/>
-	<assets path="assets/videos"        if="VIDEOS_ALLOWED"/>
-	<assets path="assets/songs"         exclude="*.ogg" if="web"/>
-	<assets path="assets/songs"         exclude="*.mp3" unless="web"/>
-	<assets path="assets/week_assets"   rename="assets" exclude="*.ogg" if="web"/>
-	<assets path="assets/week_assets"   rename="assets" exclude="*.mp3" unless="web"/>
-		
-		<!-- Compressed Texture Assets -->
-		<!-- When compressed textures are available, they load instead of base PNGs -->
-		<assets path="assets/images-compressed"   rename="assets/shared/images" unless="windows" if="android"/>
-		<assets path="assets/images-compressed"   rename="assets/shared/images" if="ios"/>
-		<assets path="assets/images-compressed"   rename="assets/shared/images" if="windows"/>
-		<assets path="assets/images-base"         rename="assets/shared/images" />
-	<section if="TITLE_SCREEN_EASTER_EGG">
-		<assets path="assets/secrets" rename="assets/shared" exclude="*.ogg" if="web"/>
-		<assets path="assets/secrets" rename="assets/shared" exclude="*.mp3"  unless="web"/>
-	</section>
+<classpath name="source" />
 
-	<section if="TRANSLATIONS_ALLOWED">
-		<assets path="assets/translations" rename="assets" exclude="*.ogg" if="web"/>
-		<assets path="assets/translations" rename="assets" exclude="*.mp3"  unless="web"/>
-	</section>
+<assets path="assets/fonts" />
+<assets path="assets/shared" exclude="*.mp3" unless="web"/>
+<assets path="assets/embed" exclude="*.mp3" unless="web" embed="true"/>
+<assets path="assets/videos" if="VIDEOS_ALLOWED"/>
+<assets path="assets/songs" exclude="*.mp3" unless="web"/>
+<assets path="assets/week_assets" rename="assets" exclude="*.mp3" unless="web"/>
 
-	<section if="BASE_GAME_FILES">
-		<assets path="assets/base_game" rename="assets" exclude="*.ogg" if="web"/>
-		<assets path="assets/base_game" rename="assets" exclude="*.mp3"  unless="web"/>
-		<haxelib name="grig.audio" if="BASE_GAME_FILES"/>
-		<haxelib name="funkin.vis" if="BASE_GAME_FILES"/>
-	</section>
+<!-- Compressed Texture Assets for Android -->
+<assets path="assets/images-compressed" rename="assets/shared/images" if="android"/>
+<assets path="assets/images-base" rename="assets/shared/images" />
 
-	<define name="CHECK_FOR_UPDATES" if="officialBuild"/>
+<section if="TITLE_SCREEN_EASTER_EGG">
+<assets path="assets/secrets" rename="assets/shared" exclude="*.mp3" unless="web"/>
+</section>
 
-	<section if="MODS_ALLOWED">
-		<assets path='example_mods' rename='mods' embed='false' />
-		<assets path='list.txt' rename='modsList.txt' />
-	</section>
-	
-	<assets path='art/readme.txt' rename='do NOT readme.txt' unless="mobile" />
+<section if="TRANSLATIONS_ALLOWED">
+<assets path="assets/translations" rename="assets" exclude="*.mp3" unless="web"/>
+</section>
 
-	<section if="desktop">
-		<assets path="alsoft.txt" rename="plugins/alsoft.ini" type="text" if="windows"/>
-		<assets path="alsoft.txt" rename="plugins/alsoft.conf" type="text" unless="windows"/>
-	</section>
+<section if="BASE_GAME_FILES">
+<assets path="assets/base_game" rename="assets" exclude="*.mp3" unless="web"/>
+<haxelib name="grig.audio" if="BASE_GAME_FILES"/>
+<haxelib name="funkin.vis" if="BASE_GAME_FILES"/>
+</section>
 
-	<haxelib name="flixel"/>
-	<haxelib name="flixel-addons" version="3.3.2"/>
-	<haxelib name="tjson" version="1.4.0"/>
+<define name="CHECK_FOR_UPDATES" if="officialBuild"/>
 
-	<haxelib name="linc_luajit" if="LUA_ALLOWED"/>
-	<haxelib name="hscript-iris" if="HSCRIPT_ALLOWED"/>
-	<haxelib name="hxvlc" if="VIDEOS_ALLOWED"/>
-	<haxelib name="hxdiscord_rpc" if="DISCORD_ALLOWED"/>
-	<haxelib name="flxanimate"/>
-		<haxelib name="extension-androidtools" if="android"/>
+<section if="MODS_ALLOWED">
+<assets path='example_mods' rename='mods' embed='false' />
+<assets path='list.txt' rename='modsList.txt' />
+</section>
 
-	<haxedef name="DISCORD_DISABLE_IO_THREAD" if="hxdiscord_rpc" />
-	<haxedef name="NO_PRECOMPILED_HEADERS" if="linux" />
+<haxelib name="flixel"/>
+<haxelib name="flixel-addons" version="3.3.2"/>
+<haxelib name="tjson" version="1.4.0"/>
 
-	<haxelib name="hxcpp-debug-server" if="debug"/>
-	<haxedef name="HXC_LIBVLC_LOGGING" if="VIDEOS_ALLOWED debug" />
-	<haxedef name="HXVLC_NO_SHARE_DIRECTORY" if="VIDEOS_ALLOWED" />
-	<haxedef name="HXVLC_EXPERIMENTAL_WINDOWSARM" if="windows HXCPP_ARM64" />
-	<define name="x86_BUILD" if="32bits" />
-	
-	<haxedef name="FLX_NO_FOCUS_LOST_SCREEN" />
-	
-	<haxedef name="HXC_DEBUG_TRACE" if="debug" />
-	
-	<haxedef name="FLX_NO_DEBUG" unless="debug" />
+<haxelib name="linc_luajit" if="LUA_ALLOWED"/>
+<haxelib name="hscript-iris" if="HSCRIPT_ALLOWED"/>
+<haxelib name="hxvlc" if="VIDEOS_ALLOWED"/>
+<haxelib name="flxanimate"/>
+<haxelib name="extension-androidtools" if="android"/>
 
-	<haxedef name="NAPE_RELEASE_BUILD" unless="debug" />
-	
-	<section if="cpp">
-		<haxedef name="HXCPP_CHECK_POINTER" />
-		<haxedef name="HXCPP_STACK_LINE" />
-		<haxedef name="HXCPP_STACK_TRACE" />
-		<haxedef name="HXCPP_CATCH_SEGV" />
-	</section>
-	
-	<haxedef name='no-deprecation-warnings' />
+<haxelib name="hxcpp-debug-server" if="debug"/>
+<haxedef name="HXC_LIBVLC_LOGGING" if="VIDEOS_ALLOWED debug" />
+<haxedef name="HXVLC_NO_SHARE_DIRECTORY" if="VIDEOS_ALLOWED" />
 
-	<haxedef name="message.reporting" value="pretty" />
+<haxedef name="FLX_NO_FOCUS_LOST_SCREEN" />
 
-	<certificate path="key.keystore" password="psychengine" alias="psychport" alias-password="psychengine" if="android" unless="debug" />
+<haxedef name="HXC_DEBUG_TRACE" if="debug" />
 
-	<config:ios category_type="public.app-category.music-games" />
-	<config:mac category_type="public.app-category.music-games" />
+<haxedef name="FLX_NO_DEBUG" unless="debug" />
 
-	<haxedef name="SHARE_MOBILE_FILES" if="ios" />
+<haxedef name="NAPE_RELEASE_BUILD" unless="debug" />
 
-	<haxeflag name="--macro" value="allowPackage('flash')" />
-	<haxeflag name="--macro" value="include('my.pack')" />
+<section if="cpp">
+<haxedef name="HXCPP_CHECK_POINTER" />
+<haxedef name="HXCPP_STACK_LINE" />
+<haxedef name="HXCPP_STACK_TRACE" />
+<haxedef name="HXCPP_CATCH_SEGV" />
+</section>
 
-	<haxedef name="hscriptPos" if="HSCRIPT_ALLOWED" />
+<haxedef name='no-deprecation-warnings' />
 
-	<assets path='art/icons/iconOG.png' rename='icon.png' if="linux || mac" />
-	
-	<icon path="art/icons/icon16.png" size='16'/>
-	<icon path="art/icons/icon32.png" size='32'/>
-	<icon path="art/icons/icon64.png" size='64'/>
-	<icon path="art/icons/iconOG.png" />
+<haxedef name="message.reporting" value="pretty" />
+
+<certificate path="key.keystore" password="psychengine" alias="psychport" alias-password="psychengine" if="android" unless="debug" />
+
+<haxeflag name="--macro" value="allowPackage('flash')" />
+<haxeflag name="--macro" value="include('my.pack')" />
+
+<haxedef name="hscriptPos" if="HSCRIPT_ALLOWED" />
+
+<icon path="art/icons/icon16.png" size='16'/>
+<icon path="art/icons/icon32.png" size='32'/>
+<icon path="art/icons/icon64.png" size='64'/>
+<icon path="art/icons/iconOG.png" />
 </project>
 
 <!-- Android API Settings -->
