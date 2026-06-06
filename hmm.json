@@ -64,11 +64,6 @@
       "url": "https://github.com/MaybeMaru/flixel-animate"
     },
     {
-      "name": "grig.audio",
-      "type": "haxelib",
-      "version": "0.0.5"
-    },
-    {
       "name": "funkin.vis",
       "type": "git",
       "ref": "main",
