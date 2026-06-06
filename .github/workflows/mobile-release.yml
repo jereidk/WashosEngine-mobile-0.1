@@ -71,24 +71,15 @@ jobs:
           haxelib run lime config ANDROID_NDK_ROOT $ANDROID_NDK_LATEST_HOME || true
           haxelib run lime config ANDROID_SETUP true || true
 
-      - name: Fix hxcpp version (AFTER lime config)
+      - name: Fix hxcpp version (install 4.3.138 from git)
         run: |
-          echo "=== Removing old hxcpp and installing 4.3.2 ==="
-          rm -rf ~/haxelib/hxcpp || true
-          haxelib install hxcpp 4.3.2 -f || true
-          
-          # Wait for installation to complete
-          echo "=== Waiting for hxcpp 4.3.2 to be fully installed ==="
-          for i in {1..30}; do
-            if [ -d ~/haxelib/hxcpp/4,3,2/include ]; then
-              echo "hxcpp 4.3.2 is ready"
-              break
-            fi
-            echo "Waiting... ($i/30)"
-            sleep 5
-          done
-          
-          haxelib global hxcpp 4.3.2 || true
+          echo "=== Installing hxcpp 4.3.138 from git ==="
+          cd ~/haxelib
+          rm -rf hxcpp || true
+          git clone --depth 1 --branch 4.3.138 https://github.com/HaxeFoundation/hxcpp.git
+          cd hxcpp
+          git submodule update --init --recursive || true
+          haxelib run hxcpp setup || true
           echo "=== Verifying hxcpp ==="
           ls ~/haxelib/hxcpp/
           haxelib list | grep hxcpp
