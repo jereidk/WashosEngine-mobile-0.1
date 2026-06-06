@@ -48,10 +48,10 @@ jobs:
           haxelib remove hxcpp --quiet 2>/dev/null || true
           haxelib remove flixel --quiet 2>/dev/null || true
           haxelib remove flixel-addons --quiet 2>/dev/null || true
-          haxelib install lime 9.3.0 || true
-          haxelib install openfl 9.3.3 || true
-          haxelib install hxcpp 4.3.0 || true
-          haxelib install flixel 5.6.0 || true
+          haxelib install lime || true
+          haxelib install openfl || true
+          haxelib install hxcpp || true
+          haxelib install flixel || true
           haxelib install flixel-addons 3.3.2 || true
           haxelib install hxp 1.3.0 || true
           haxelib install hscript-iris 1.1.3 || true
