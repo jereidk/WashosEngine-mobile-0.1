@@ -5,7 +5,6 @@
 <set name="APP_ID" value="0x0100f6c013bbc000" />
 
 <haxedef name="HXCPP_ARM64" if="android"/>
-<haxedef name="HXCPP_ARMV7" value="0" if="android"/>
 <haxedef name="USING_GPU_TEXTURES" if="android"/>
 <app preloader="flixel.system.FlxPreloader" />
 
