@@ -9,9 +9,9 @@ import flixel.math.FlxPoint;
 import flixel.math.FlxRect;
 import flixel.FlxSprite;
 import flixel.FlxObject;
-import flixel.FlxText;
+import flixel.text.FlxText;
 import flixel.FlxCamera;
-import flixel.FlxGroup;
+import flixel.group.FlxGroup;
 import flixel.FlxBasic;
 import flixel.tweens.FlxTween;
 import flixel.tweens.FlxEase;
@@ -89,6 +89,62 @@ class LuaBridge
         typeConverters = new StringMap();
         initTypeConverters();
     }
+
+    // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
+    
+    private inline function error(msg:String):Void
+    {
+        #if debug
+        trace('[LuaBridge Error] ' + msg);
+        #end
+        throw msg;
+    }
+    
+    private inline function safeArray(arr:Array<Dynamic>):Array<Dynamic>
+    {
+        return arr != null ? arr : [];
+    }
+    
+    private inline function wrapObject(obj:Dynamic):Dynamic
+    {
+        if (obj == null) return null;
+        var proxyId = registerProxy(obj);
+        return {__proxyId: proxyId, __classPath: Type.getClassName(Type.getClass(obj))};
+    }
+    
+    private inline function getString(args:Array<Dynamic>, index:Int, ?defaultValue:String = ''):String
+    {
+        return index < args.length && Std.is(args[index], String) ? args[index] : defaultValue;
+    }
+    
+    private inline function getInt(args:Array<Dynamic>, index:Int, ?defaultValue:Int = 0):Int
+    {
+        return index < args.length && Std.is(args[index], Int) ? args[index] : defaultValue;
+    }
+    
+    private inline function getArg(args:Array<Dynamic>, index:Int):Dynamic
+    {
+        return index < args.length ? args[index] : null;
+    }
+    
+    private function initTypeConverters():Void
+    {
+        // Basic type converters are initialized here
+    }
+    
+
+    private function registerProxy(obj:Dynamic):Int
+    {
+        var id = nextProxyId++;
+        proxyRegistry.set(Std.string(id), new LuaObjectProxy(obj, Type.getClassName(Type.getClass(obj)), id));
+        return id;
+    }
+    
+
+    
+
     
     // ============================================
     // INITIALIZATION
@@ -1307,7 +1363,7 @@ class LuaBridge
         }
         
         if (Std.is(value, Enum)) {
-        var enm:Enum<Dynamic> = value;
+            var enm:EnumValue = cast value;
         var params = Type.enumParameters(enm);
             if (params.length == 0) {
                 return Type.getEnumName(enm) + '.' + Type.enumConstructor(enm);
@@ -1350,8 +1406,8 @@ class LuaBridge
             case TInt: return value;
             case TFloat: return value;
             case TBool: return value;
-            case TString: return value;
-            case TArray:
+            case tString: return value;
+            case tArray:
                 return [for (i in 0...cast(value, Array<Dynamic>).length) 
                     coerceToLua(cast(value, Array<Dynamic>)[i])];
             case TClass(c):
