@@ -1364,11 +1364,12 @@ class LuaBridge
         
         if (Std.is(value, Enum)) {
             var enm:EnumValue = cast value;
-        var params = Type.enumParameters(enm);
+            var enumDynamic:Enum<Dynamic> = cast enm;
+            var params = Type.enumParameters(enumDynamic);
             if (params.length == 0) {
-                return Type.getEnumName(enm) + '.' + Type.enumConstructor(enm);
+                return Type.getEnumName(enumDynamic) + '.' + Type.enumConstructor(enumDynamic);
             }
-            return Type.getEnumName(enm) + '.' + Type.enumConstructor(enm) + '(' + params.join(', ') + ')';
+            return Type.getEnumName(enumDynamic) + '.' + Type.enumConstructor(enumDynamic) + '(' + params.join(', ') + ')';
         }
         
         // Object
