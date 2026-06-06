@@ -41,7 +41,7 @@ jobs:
           ls -la ~/.haxelib/ 2>/dev/null || echo "~/.haxelib not found"
           ls -la ~/.local/share/haxelib/ 2>/dev/null || echo "~/.local/share/haxelib not found"
           ls -la .haxelib/ 2>/dev/null || echo ".haxelib not found"
-          # Try to find and patch the lime haxelib.json
+          # Try to find and patch the lime haxelib.json in all possible locations
           for LIME_DIR in "$HOME/.haxelib/lime" "$HOME/.local/share/haxelib/lime" "/usr/local/lib/haxe/lib/lime" ".haxelib/lime"; do
             PARENT_DIR="$(dirname "$LIME_DIR")"
             if [ -d "$PARENT_DIR" ] || mkdir -p "$PARENT_DIR" 2>/dev/null; then
@@ -49,7 +49,6 @@ jobs:
               printf '{"name":"lime","url":"https://github.com/openfl/lime","license":"MIT","tags":[],"description":"A foundational Haxe framework for cross-platform development","version":"8.3.1","releasenote":"Various bug fixes","contributors":["singmajesty","bowlerhat","Dimensionscape"],"classPath":"src"}\n' > "$LIME_DIR/haxelib.json"
               echo "=== Created $LIME_DIR/haxelib.json ==="
               cat "$LIME_DIR/haxelib.json"
-              break
             fi
           done
 
