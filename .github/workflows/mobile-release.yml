@@ -78,11 +78,8 @@ jobs:
           rm -rf hxcpp || true
           curl -sL https://github.com/HaxeFoundation/hxcpp/releases/download/v4.3.138/hxcpp-4.3.138.zip -o hxcpp.zip
           unzip -q hxcpp.zip
-          rm hxcpp.zip
-          mv hxcpp-* hxcpp || true
-          echo "=== Verifying hxcpp ==="
+                    echo "=== Verifying hxcpp ==="
           ls ~/haxelib/hxcpp/
-          haxelib list | grep hxcpp
 
       - name: Compile
         run: haxelib run lime build android -ONLY_ARM64 -D ASTC
