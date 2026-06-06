@@ -60,13 +60,13 @@
     {
       "name": "flxanimate",
       "type": "git",
-      "ref": "main",
+      "ref": "master",
       "url": "https://github.com/MaybeMaru/flixel-animate"
     },
     {
       "name": "grig.audio",
       "type": "git",
-      "ref": "main",
+      "ref": "funkin",
       "url": "https://github.com/FunkinCrew/grig.audio"
     },
     {
