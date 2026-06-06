@@ -39,9 +39,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/haxelib
-          key: haxelib-${{ runner.os }}-${{ env.HAXE_VERSION }}-hxcpp4.3.2-${{ hashFiles('Project.xml') }}
+          key: haxelib-${{ runner.os }}-${{ env.HAXE_VERSION }}-hxcpp-git-v4.3.138-${{ hashFiles('Project.xml') }}
           restore-keys: |
-            haxelib-${{ runner.os }}-${{ env.HAXE_VERSION }}-hxcpp4.3.2-
+            haxelib-${{ runner.os }}-${{ env.HAXE_VERSION }}-hxcpp-git-v4.3.138-
             haxelib-${{ runner.os }}-
 
       - name: Setup Android NDK
@@ -76,7 +76,7 @@ jobs:
           echo "=== Installing hxcpp 4.3.138 from git ==="
           cd ~/haxelib
           rm -rf hxcpp || true
-          git clone --depth 1 --branch 4.3.138 https://github.com/HaxeFoundation/hxcpp.git
+          git clone --depth 1 --branch v4.3.138 https://github.com/HaxeFoundation/hxcpp.git
           cd hxcpp
           git submodule update --init --recursive || true
           haxelib run hxcpp setup || true
