@@ -1399,6 +1399,7 @@ class LuaBridge
         return value;
     }
     
+}
     /**
      * Wrap Haxe object as Lua table
      */
