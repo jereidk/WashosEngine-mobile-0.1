@@ -259,13 +259,6 @@ var isAlphabet:Bool = AlphaCharacter.isTypeAlphabet(character.toLowerCase());
 }
 
 ///////////////////////////////////////////
-// ALPHABET LETTERS, SYMBOLS AND NUMBERS //
-///////////////////////////////////////////
-{
-	ALPHABET;
-	NUMBER_OR_SYMBOL;
-}*/
-
 class AlphaCharacter extends FlxSprite
 {
 	//public static var alphabet:String = "abcdefghijklmnopqrstuvwxyz";
