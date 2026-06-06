@@ -53,14 +53,10 @@ class Particle extends FlxSprite
     public var velocityInitial:FlxPoint = FlxPoint.get();
     
     /** Aceleración */
-    public var acceleration:FlxPoint = FlxPoint.get();
     
     /** Drag (fricción) */
-    public var drag:FlxPoint = FlxPoint.get();
     
     /** Rotación speed */
-    public var angularVelocity:Float = 0;
-    public var angularAcceleration:Float = 0;
     
     /** Scale inicial y velocidad */
     public var scaleInitial:FlxPoint = FlxPoint.get(1, 1);
@@ -84,7 +80,6 @@ class Particle extends FlxSprite
     public var delayRemaining:Float = 0;
     
     /** Blend mode */
-    public var blend:String = 'normal';
     
     /** Si está activa (no en delay ni muerta) */
     public var isActive:Bool = false;
@@ -207,8 +202,7 @@ class Particle extends FlxSprite
         delayRemaining = delay;
         
         // Blend
-        blend = config.blend ?? 'normal';
-        updateBlendMode();
+        this.blend = config.blend != null ? BlendMode.createByName(config.blend) : BlendMode.NORMAL;
         
         // Sprite
         if (config.sprite != null) {
