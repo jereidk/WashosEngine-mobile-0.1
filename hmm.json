@@ -21,13 +21,13 @@
     {
       "name": "flixel",
       "type": "git",
-      "ref": "master",
+      "ref": "dev-funkin",
       "url": "https://github.com/FunkinCrew/flixel"
     },
     {
       "name": "flixel-addons",
       "type": "git",
-      "ref": "master",
+      "ref": "dev-funkin-latest",
       "url": "https://github.com/FunkinCrew/flixel-addons"
     },
     {
