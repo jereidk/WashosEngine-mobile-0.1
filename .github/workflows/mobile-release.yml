@@ -61,7 +61,7 @@ jobs:
           haxelib install flxanimate || true
           haxelib install tjson 1.4.0 || true
           haxelib install hxvlc 2.0.1 --skip-dependencies || true
-          haxelib install linc_luajit 4.1.0 || true
+          haxelib install linc_luajit || true
           haxelib install extension-androidtools 2.2.2 || true
           haxelib run lime setup -y || true
 
