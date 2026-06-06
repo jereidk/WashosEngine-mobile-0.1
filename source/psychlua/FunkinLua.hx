@@ -1872,7 +1872,7 @@ class FunkinLua {
 		// Create particle emitter
 		Lua_helper.add_callback(lua, "createParticleEmitter", function(?x:Float = 0, ?y:Float = 0, ?maxParticles:Int = 200):Int {
 			var emitter = new ParticleEmitter(x, y, maxParticles);
-			emitter.cameras = [camHUD]; PlayState.instance.add(emitter); return assignParticleEmitterId(emitter);
+			emitter.cameras = [PlayState.instance.camHUD]; PlayState.instance.add(emitter); return assignParticleEmitterId(emitter);
 		});
 		
 		// Configure emitter
@@ -1934,7 +1934,7 @@ class FunkinLua {
 		Lua_helper.add_callback(lua, "setEmitterColors", function(id:Int, colors:Array<Int>):Void {
 			var emitter = getParticleEmitter(id);
 			if (emitter != null) {
-				var flxColors:Array<FlxColor> = [for (c in colors) FlxColor.createFromRGB(c >> 16 & 0xFF, c >> 8 & 0xFF, c & 0xFF)];
+				var flxColors:Array<FlxColor> = [for (c in colors) FlxColor.fromRGB(c >> 16 & 0xFF, c >> 8 & 0xFF, c & 0xFF)];
 				emitter.setColors(flxColors);
 			}
 		});
@@ -1947,7 +1947,7 @@ class FunkinLua {
 		Lua_helper.add_callback(lua, "setEmitterCircleGraphic", function(id:Int, size:Int, ?color:Int = 0xFFFFFF):Void {
 			var emitter = getParticleEmitter(id);
 			if (emitter != null) {
-				emitter.setParticleGraphic(size, FlxColor.createFromRGB(color >> 16 & 0xFF, color >> 8 & 0xFF, color & 0xFF));
+				emitter.setParticleGraphic(size, FlxColor.fromRGB(color >> 16 & 0xFF, color >> 8 & 0xFF, color & 0xFF));
 			}
 		});
 		
@@ -2011,14 +2011,14 @@ class FunkinLua {
 			emitter.setAlpha(1, 0);
 			emitter.setBlend('additive');
 			if (colors != null) {
-				var flxColors:Array<FlxColor> = [for (c in colors) FlxColor.createFromRGB(c >> 16 & 0xFF, c >> 8 & 0xFF, c & 0xFF)];
+				var flxColors:Array<FlxColor> = [for (c in colors) FlxColor.fromRGB(c >> 16 & 0xFF, c >> 8 & 0xFF, c & 0xFF)];
 				emitter.setColors(flxColors);
 			} else {
 				emitter.setColors([FlxColor.RED, FlxColor.YELLOW, FlxColor.ORANGE]);
 			}
 			emitter.setParticleGraphic(8);
 			emitter.explode(count);
-			emitter.cameras = [camHUD]; PlayState.instance.add(emitter); return assignParticleEmitterId(emitter);
+			emitter.cameras = [PlayState.instance.camHUD]; PlayState.instance.add(emitter); return assignParticleEmitterId(emitter);
 		});
 		
 		Lua_helper.add_callback(lua, "smoke", function(x:Float, y:Float, ?count:Int = 5):Int {
@@ -2029,10 +2029,10 @@ class FunkinLua {
 			emitter.setLifetime(1, 2);
 			emitter.setScale(1, 2, 3, 5);
 			emitter.setAlpha(0.5, 0);
-			emitter.setColors([FlxColor.GRAY, FlxColor.DARK_GRAY, FlxColor.fromRGB(100, 100, 100)]);
+			emitter.setColors([FlxColor.GRAY, FlxColor.GRAY, FlxColor.fromRGB(100, 100, 100)]);
 			emitter.setParticleGraphic(16);
 			emitter.start(0.1);
-			emitter.cameras = [camHUD]; PlayState.instance.add(emitter); return assignParticleEmitterId(emitter);
+			emitter.cameras = [PlayState.instance.camHUD]; PlayState.instance.add(emitter); return assignParticleEmitterId(emitter);
 		});
 		
 		Lua_helper.add_callback(lua, "sparks", function(x:Float, y:Float, angle:Float, ?count:Int = 10):Int {
@@ -2046,7 +2046,7 @@ class FunkinLua {
 			emitter.setColors([FlxColor.YELLOW, FlxColor.ORANGE, FlxColor.WHITE]);
 			emitter.setParticleGraphic(4);
 			emitter.explode(count);
-			emitter.cameras = [camHUD]; PlayState.instance.add(emitter); return assignParticleEmitterId(emitter);
+			emitter.cameras = [PlayState.instance.camHUD]; PlayState.instance.add(emitter); return assignParticleEmitterId(emitter);
 		});
 		
 		Lua_helper.add_callback(lua, "confetti", function(?x:Float = -1, ?y:Float = -1, ?count:Int = 50):Int {
@@ -2064,7 +2064,7 @@ class FunkinLua {
 			emitter.setColors([FlxColor.RED, FlxColor.BLUE, FlxColor.GREEN, FlxColor.YELLOW, FlxColor.PINK, FlxColor.CYAN]);
 			emitter.setParticleGraphic(6);
 			emitter.start(0.05);
-			emitter.cameras = [camHUD]; PlayState.instance.add(emitter); return assignParticleEmitterId(emitter);
+			emitter.cameras = [PlayState.instance.camHUD]; PlayState.instance.add(emitter); return assignParticleEmitterId(emitter);
 		});
 		
 		Lua_helper.add_callback(lua, "stars", function(x:Float, y:Float, ?count:Int = 20):Int {
@@ -2078,7 +2078,7 @@ class FunkinLua {
 			emitter.setColors([FlxColor.WHITE, FlxColor.fromRGB(200, 200, 255)]);
 			emitter.setParticleGraphic(3);
 			emitter.explode(count);
-			emitter.cameras = [camHUD]; PlayState.instance.add(emitter); return assignParticleEmitterId(emitter);
+			emitter.cameras = [PlayState.instance.camHUD]; PlayState.instance.add(emitter); return assignParticleEmitterId(emitter);
 		});
 	}
 	

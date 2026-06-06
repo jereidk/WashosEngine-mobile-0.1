@@ -230,25 +230,25 @@ class BeatSync
         // Tween de vuelta al original usando switch para propiedades dinámicas
         switch (tween.property) {
             case 'x':
-                tween.sprite.tween(tween.sprite, {x: tween.targetValue}, tween.durationSeconds, {ease: tween.ease, type: FlxTweenType.ONESHOT});
+                FlxTween.tween(tween.sprite, {x: tween.targetValue}, tween.durationSeconds, {ease: tween.ease, type: FlxTweenType.ONESHOT});
             case 'y':
-                tween.sprite.tween(tween.sprite, {y: tween.targetValue}, tween.durationSeconds, {ease: tween.ease, type: FlxTweenType.ONESHOT});
+                FlxTween.tween(tween.sprite, {y: tween.targetValue}, tween.durationSeconds, {ease: tween.ease, type: FlxTweenType.ONESHOT});
             case 'scaleX', 'scale.x':
-                tween.sprite.tween(tween.sprite.scale, {x: tween.targetValue}, tween.durationSeconds, {ease: tween.ease, type: FlxTweenType.ONESHOT});
+                FlxTween.tween(tween.sprite.scale, {x: tween.targetValue}, tween.durationSeconds, {ease: tween.ease, type: FlxTweenType.ONESHOT});
             case 'scaleY', 'scale.y':
-                tween.sprite.tween(tween.sprite.scale, {y: tween.targetValue}, tween.durationSeconds, {ease: tween.ease, type: FlxTweenType.ONESHOT});
+                FlxTween.tween(tween.sprite.scale, {y: tween.targetValue}, tween.durationSeconds, {ease: tween.ease, type: FlxTweenType.ONESHOT});
             case 'alpha':
-                tween.sprite.tween(tween.sprite, {alpha: tween.targetValue}, tween.durationSeconds, {ease: tween.ease, type: FlxTweenType.ONESHOT});
+                FlxTween.tween(tween.sprite, {alpha: tween.targetValue}, tween.durationSeconds, {ease: tween.ease, type: FlxTweenType.ONESHOT});
             case 'angle':
-                tween.sprite.tween(tween.sprite, {angle: tween.targetValue}, tween.durationSeconds, {ease: tween.ease, type: FlxTweenType.ONESHOT});
+                FlxTween.tween(tween.sprite, {angle: tween.targetValue}, tween.durationSeconds, {ease: tween.ease, type: FlxTweenType.ONESHOT});
             case 'offsetX', 'offset.x':
-                tween.sprite.tween(tween.sprite.offset, {x: tween.targetValue}, tween.durationSeconds, {ease: tween.ease, type: FlxTweenType.ONESHOT});
+                FlxTween.tween(tween.sprite.offset, {x: tween.targetValue}, tween.durationSeconds, {ease: tween.ease, type: FlxTweenType.ONESHOT});
             case 'offsetY', 'offset.y':
-                tween.sprite.tween(tween.sprite.offset, {y: tween.targetValue}, tween.durationSeconds, {ease: tween.ease, type: FlxTweenType.ONESHOT});
+                FlxTween.tween(tween.sprite.offset, {y: tween.targetValue}, tween.durationSeconds, {ease: tween.ease, type: FlxTweenType.ONESHOT});
             case 'originX', 'origin.x':
-                tween.sprite.tween(tween.sprite.origin, {x: tween.targetValue}, tween.durationSeconds, {ease: tween.ease, type: FlxTweenType.ONESHOT});
+                FlxTween.tween(tween.sprite.origin, {x: tween.targetValue}, tween.durationSeconds, {ease: tween.ease, type: FlxTweenType.ONESHOT});
             case 'originY', 'origin.y':
-                tween.sprite.tween(tween.sprite.origin, {y: tween.targetValue}, tween.durationSeconds, {ease: tween.ease, type: FlxTweenType.ONESHOT});
+                FlxTween.tween(tween.sprite.origin, {y: tween.targetValue}, tween.durationSeconds, {ease: tween.ease, type: FlxTweenType.ONESHOT});
         }
 
         // Callback
