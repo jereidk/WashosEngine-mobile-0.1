@@ -33,24 +33,29 @@ jobs:
           haxelib git openfl https://github.com/ShadowEngineTeam/openfl 5d33fb36dce7a82ed5782a60c0c24640b7f81591 --quiet
           # Install rest of dependencies via hmm
           haxelib run hmm install --quiet
-          # NOW patch ALL lime haxelib.json files to be compatible with flixel version checks
-          echo "=== Patching lime versions ==="
-          find ~/.haxelib -name "haxelib.json" 2>/dev/null | xargs grep -l "lime" 2>/dev/null | while read f; do
-            if grep -q '"version": "1"' "$f" 2>/dev/null; then
-              echo "Patching $f"
-              sed -i '' 's/"version": "1"/"version": "8.3.1"/' "$f"
-            fi
-          done
-          # Also check project local haxelib
-          if [ -d ".haxelib" ]; then
-            find .haxelib -name "haxelib.json" 2>/dev/null | while read f; do
-              if grep -q '"version": "1"' "$f" 2>/dev/null; then
-                echo "Patching project $f"
-                sed -i '' 's/"version": "1"/"version": "8.3.1"/' "$f"
-              fi
-            done
-          fi
-          echo "=== Lime version patching done ==="
+          
+          # Create/update lime haxelib.json with correct version for flixel compatibility
+          echo "Creating lime haxelib.json with version 8.3.1..."
+          mkdir -p ~/.haxelib/lime
+          cat > ~/.haxelib/lime/haxelib.json << 'LIMEJSON'
+{
+        "name": "lime",
+        "url": "https://github.com/openfl/lime",
+        "license": "MIT",
+        "tags": [],
+        "description": "A foundational Haxe framework for cross-platform development",
+        "version": "8.3.1",
+        "releasenote": "Various bug fixes",
+        "contributors": [
+                "singmajesty",
+                "bowlerhat",
+                "Dimensionscape"
+        ],
+        "classPath": "src"
+}
+LIMEJSON
+          echo "=== Created ~/.haxelib/lime/haxelib.json ==="
+          cat ~/.haxelib/lime/haxelib.json
 
       - name: Configure Android
         run: |
