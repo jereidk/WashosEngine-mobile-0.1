@@ -81,7 +81,7 @@ jobs:
           if [ -d hxcpp-* ]; then
             mv hxcpp-* hxcpp
           fi
-          ls ~/haxelib/hxcpp/
+          haxelib dev hxcpp ~/haxelib/hxcpp
 
       - name: Compile
         run: haxelib run lime build android -ONLY_ARM64 -D ASTC
