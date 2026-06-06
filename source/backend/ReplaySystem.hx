@@ -55,6 +55,14 @@ typedef ReplayData = {
 class ReplaySystem
 {
     // ============================================
+    // CONSTANTES DE ESTADO
+    // ============================================
+    private static inline var STATE_IDLE:Int = 0;
+    private static inline var STATE_RECORDING:Int = 1;
+    private static inline var STATE_PLAYBACK:Int = 2;
+    private static inline var STATE_PAUSED:Int = 3;
+
+    // ============================================
     // SINGLETON
     // ============================================
     
@@ -75,20 +83,13 @@ class ReplaySystem
     
     /** Datos del replay */
     
-    /** Estado actual */
-    enum ReplayState {
-        IDLE;
-        RECORDING;
-        PLAYBACK;
-        PAUSED;
-    }
     
     // ============================================
     // PROPIEDADES
     // ============================================
     
     /** Estado actual */
-    public var state(default, null):ReplayState = IDLE;
+    public var state(default, null):Int = 0;
     
     /** Nombre del replay actual */
     public var currentReplayName:String = '';
@@ -135,7 +136,7 @@ class ReplaySystem
      */
     public function startRecording(?name:String = 'replay'):Void
     {
-        if (state != IDLE) {
+        if (state != STATE_IDLE) {
             #if debug
             trace('[ReplaySystem] Cannot start recording - state is ' + state);
             #end
@@ -144,7 +145,7 @@ class ReplaySystem
         
         currentReplayName = name;
         recordedInputs = [];
-        state = RECORDING;
+        state = STATE_RECORDING;
         startTime = 0;
         pausedTime = 0;
         
@@ -158,7 +159,7 @@ class ReplaySystem
      */
     public function recordInput(time:Float, key:Int, pressed:Bool, ?noteData:Int = -1):Void
     {
-        if (state != RECORDING) return;
+        if (state != STATE_RECORDING) return;
         
         if (startTime == 0) startTime = time;
         
@@ -175,7 +176,7 @@ class ReplaySystem
      */
     public function recordNoteHit(time:Float, noteData:Int, rating:String):Void
     {
-        if (state != RECORDING) return;
+        if (state != STATE_RECORDING) return;
         
         // 0-3 son las teclas de juego
         recordInput(time, noteData, true, noteData);
@@ -186,10 +187,10 @@ class ReplaySystem
      */
     public function stopRecording():ReplayData
     {
-        if (state != RECORDING) return null;
+        if (state != STATE_RECORDING) return null;
         
         replayData = createReplayData();
-        state = IDLE;
+        state = STATE_IDLE;
         
         #if debug
         trace('[ReplaySystem] Stopped recording. Inputs: ' + recordedInputs.length);
@@ -230,7 +231,7 @@ class ReplaySystem
      */
     public function saveReplay(?path:String = null):Bool
     {
-        if (replayData == null && state == IDLE) {
+        if (replayData == null && state == STATE_IDLE) {
             replayData = createReplayData();
         }
         
@@ -329,7 +330,7 @@ class ReplaySystem
         
         isGhostMode = ghostMode;
         playbackIndex = 0;
-        state = PLAYBACK;
+        state = STATE_PLAYBACK;
         startTime = 0;
         
         #if debug
@@ -342,8 +343,8 @@ class ReplaySystem
      */
     public function pausePlayback():Void
     {
-        if (state == PLAYBACK) {
-            state = PAUSED;
+        if (state == STATE_PLAYBACK) {
+            state = STATE_PAUSED;
             #if debug
             trace('[ReplaySystem] Paused playback');
             #end
@@ -355,8 +356,8 @@ class ReplaySystem
      */
     public function resumePlayback():Void
     {
-        if (state == PAUSED) {
-            state = PLAYBACK;
+        if (state == STATE_PAUSED) {
+            state = STATE_PLAYBACK;
             #if debug
             trace('[ReplaySystem] Resumed playback');
             #end
@@ -368,7 +369,7 @@ class ReplaySystem
      */
     public function stopPlayback():Void
     {
-        state = IDLE;
+        state = STATE_IDLE;
         playbackIndex = 0;
         
         #if debug
@@ -381,7 +382,7 @@ class ReplaySystem
      */
     public function update(currentTime:Float):Void
     {
-        if (state != PLAYBACK) return;
+        if (state != STATE_PLAYBACK) return;
         if (replayData == null) return;
         
         if (startTime == 0) startTime = currentTime;
@@ -496,7 +497,7 @@ class ReplaySystem
      */
     public function clear():Void
     {
-        state = IDLE;
+        state = STATE_IDLE;
         replayData = null;
         recordedInputs = [];
         playbackIndex = 0;
