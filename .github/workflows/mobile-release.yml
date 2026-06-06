@@ -91,23 +91,6 @@ jobs:
           if [ -n "$LINC_LUAJIT_PATH" ]; then
             echo "Found linc_luajit at: $LINC_LUAJIT_PATH"
             
-            # List contents
-            echo "Contents of linc_luajit:"
-            ls -la "$LINC_LUAJIT_PATH/" 2>/dev/null || echo "Cannot list linc_luajit"
-            
-            echo "Contents of linc_luajit/linc:"
-            ls -la "$LINC_LUAJIT_PATH/linc/" 2>/dev/null || echo "linc directory not found"
-            
-            # Check if linc_luajit is a git submodule or has a 'git' subdirectory
-            echo "Looking for git directory:"
-            ls -la "$LINC_LUAJIT_PATH/git/" 2>/dev/null || echo "git directory not found"
-            
-            # If linc_luajit points to another location via haxelib.json, follow it
-            if [ -f "$LINC_LUAJIT_PATH/haxelib.json" ]; then
-              echo "haxelib.json content:"
-              cat "$LINC_LUAJIT_PATH/haxelib.json"
-            fi
-            
             # Remove incompatible ARM libraries (try multiple possible paths)
             echo "Removing incompatible libraries..."
             find "$LINC_LUAJIT_PATH" -name "libluajit-v7.a" -type f 2>/dev/null | while read f; do
@@ -124,19 +107,25 @@ jobs:
             done
             
             # Patch linc_lua.xml - remove ARMv7, x86, x86_64 lib references
-            # Try to find linc_lua.xml in any subdirectory
-            LUA_XML=$(find "$LINC_LUAJIT_PATH" -name "linc_lua.xml" 2>/dev/null | head -1)
-            echo "Looking for linc_lua.xml anywhere: $LUA_XML"
+            # Find and save to a variable first
+            LUA_XML_PATH=""
+            for xml in "$LINC_LUAJIT_PATH"/**/linc_lua.xml "$LINC_LUAJIT_PATH"/*/linc/linc_lua.xml; do
+              if [ -f "$xml" ]; then
+                LUA_XML_PATH="$xml"
+                break
+              fi
+            done
             
-            if [ -n "$LUA_XML" ] && [ -f "$LUA_XML" ]; then
-              echo "Found linc_lua.xml at $LUA_XML, patching..."
-              sed -i "s|<lib name='\${LINC_LUA_PATH}/lib/lua/lib/Android/libluajit-v7.a' if='HXCPP_ARMV7' />||g" "$LUA_XML"
-              sed -i "s|<lib name='\${LINC_LUA_PATH}/lib/lua/lib/Android/libluajit-x86.a' if='HXCPP_X86' />||g" "$LUA_XML"
-              sed -i "s|<lib name='\${LINC_LUA_PATH}/lib/lua/lib/Android/libluajit-x86_64.a' if='HXCPP_X86_64' />||g" "$LUA_XML"
-              echo "Patched successfully"
-              grep -A10 'if="android"' "$LUA_XML" || echo "No android section found"
+            if [ -z "$LUA_XML_PATH" ]; then
+              echo "ERROR: linc_lua.xml not found"
             else
-              echo "ERROR: linc_lua.xml not found anywhere"
+              echo "Found linc_lua.xml at $LUA_XML_PATH"
+              # Use perl for in-place editing (more reliable than sed -i)
+              perl -i -pe 's|<lib name=\$\{LINC_LUA_PATH\}/lib/lua/lib/Android/libluajit-v7\.a'\'' if=\$\''HXCPP_ARMV7'\'\'' />||g' "$LUA_XML_PATH"
+              perl -i -pe 's|<lib name=\$\{LINC_LUA_PATH\}/lib/lua/lib/Android/libluajit-x86\.a'\'' if=\$\''HXCPP_X86'\'\'' />||g' "$LUA_XML_PATH"
+              perl -i -pe 's|<lib name=\$\{LINC_LUA_PATH\}/lib/lua/lib/Android/libluajit-x86_64\.a'\'' if=\$\''HXCPP_X86_64'\'\'' />||g' "$LUA_XML_PATH"
+              echo "Patched successfully"
+              grep 'if="android"' "$LUA_XML_PATH" || echo "No android section found"
             fi
           else
             echo "ERROR: linc_luajit not found!"
