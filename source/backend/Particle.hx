@@ -202,7 +202,7 @@ class Particle extends FlxSprite
         delayRemaining = delay;
         
         // Blend
-        this.blend = config.blend != null ? BlendMode.createByName(config.blend) : BlendMode.NORMAL;
+        
         
         // Sprite
         if (config.sprite != null) {

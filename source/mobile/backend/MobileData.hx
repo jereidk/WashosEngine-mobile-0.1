@@ -52,8 +52,8 @@ NONE;
 }
 
 	class MobileData {
-	public static var actionModes:Map<String, TouchButtonsData> = new Map();
-	public static var dpadModes:Map<String, TouchButtonsData> = new Map();
+	public static var actionModes:Map<String, ButtonsData> = new Map();
+	public static var dpadModes:Map<String, ButtonsData> = new Map();
 	public static var extraActions:Map<String, ExtraActions> = new Map();
 
 	public static var mode(get, set):Int;
