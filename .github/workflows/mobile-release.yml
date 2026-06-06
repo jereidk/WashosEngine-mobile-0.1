@@ -36,23 +36,28 @@ jobs:
           
           # Create/update lime haxelib.json with correct version for flixel compatibility
           echo "Creating lime haxelib.json with version 8.3.1..."
-          # Find the actual haxelib directory
-          HAXELIB_PATH=$(haxelib path lime 2>/dev/null | grep -v "^$" | head -1)
-          LIME_DIR=$(dirname $(dirname "$HAXELIB_PATH"))
-          echo "Lime directory: $LIME_DIR"
-          mkdir -p "$LIME_DIR"
-          printf '{\n  "name": "lime",\n  "url": "https://github.com/openfl/lime",\n  "license": "MIT",\n  "tags": [],\n  "description": "A foundational Haxe framework for cross-platform development",\n  "version": "8.3.1",\n  "releasenote": "Various bug fixes",\n  "contributors": ["singmajesty","bowlerhat","Dimensionscape"],\n  "classPath": "src"\n}\n' > "$LIME_DIR/haxelib.json"
-          echo "=== Created $LIME_DIR/haxelib.json ==="
-          cat "$LIME_DIR/haxelib.json"
+          # Try multiple possible locations for haxelib on different systems
+          for LIME_DIR in "$HOME/.haxelib/lime" "$HOME/.local/share/haxelib/lime" "/usr/local/lib/haxe/lib/lime"; do
+            if [ -d "$(dirname "$LIME_DIR")" ]; then
+              mkdir -p "$LIME_DIR"
+              printf '{\n  "name": "lime",\n  "url": "https://github.com/openfl/lime",\n  "license": "MIT",\n  "tags": [],\n  "description": "A foundational Haxe framework for cross-platform development",\n  "version": "8.3.1",\n  "releasenote": "Various bug fixes",\n  "contributors": ["singmajesty","bowlerhat","Dimensionscape"],\n  "classPath": "src"\n}\n' > "$LIME_DIR/haxelib.json"
+              echo "=== Created $LIME_DIR/haxelib.json ==="
+              cat "$LIME_DIR/haxelib.json"
+              break
+            fi
+          done
 
       - name: Configure Android
         run: |
           echo "Checking lime version..."
           haxelib list lime
-          HAXELIB_PATH=$(haxelib path lime 2>/dev/null | grep -v "^$" | head -1)
-          LIME_DIR=$(dirname $(dirname "$HAXELIB_PATH"))
-          echo "Lime directory: $LIME_DIR"
-          cat "$LIME_DIR/haxelib.json" 2>/dev/null | head -5 || echo "No haxelib.json found"
+          for LIME_DIR in "$HOME/.haxelib/lime" "$HOME/.local/share/haxelib/lime" "/usr/local/lib/haxe/lib/lime"; do
+            if [ -f "$LIME_DIR/haxelib.json" ]; then
+              echo "Found lime haxelib.json at $LIME_DIR"
+              head -5 "$LIME_DIR/haxelib.json"
+              break
+            fi
+          done
           haxelib run lime config ANDROID_SDK $ANDROID_HOME
           haxelib run lime config ANDROID_NDK_ROOT $ANDROID_NDK_LATEST_HOME
           haxelib run lime config JAVA_HOME $JAVA_HOME_21_arm64
