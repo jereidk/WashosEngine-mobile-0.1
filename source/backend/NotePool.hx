@@ -70,7 +70,7 @@ class NotePool
      */
     public function get(?strumTime:Float = 0, ?noteData:Int = 0, ?prevNote:Note = null, ?sustainNote:Bool = false):Note
     {
-        var note:Note;
+        var note:Note = null;
         
         // Buscar nota disponible en el pool
         if (pool.length > 0) {
