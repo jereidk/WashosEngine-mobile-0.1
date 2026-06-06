@@ -2,14 +2,6 @@ name: Android Build
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-      - fix/**
-      - dev/**
-  pull_request:
-    branches:
-      - main
 
 env:
   HAXE_VERSION: 4.3.7
@@ -51,15 +43,11 @@ jobs:
       - name: Install Dependencies
         run: |
           haxelib setup ~/haxelib || true
-          
-          # Limpiar TODAS las versiones anteriores
           haxelib remove lime --quiet 2>/dev/null || true
           haxelib remove openfl --quiet 2>/dev/null || true
           haxelib remove hxcpp --quiet 2>/dev/null || true
           haxelib remove flixel --quiet 2>/dev/null || true
           haxelib remove flixel-addons --quiet 2>/dev/null || true
-          
-          # Forzar instalación de versiones específicas
           haxelib install lime 9.3.0 || true
           haxelib install openfl 9.3.3 || true
           haxelib install hxcpp 4.3.0 || true
@@ -72,17 +60,7 @@ jobs:
           haxelib install hxvlc 2.0.1 --skip-dependencies || true
           haxelib install linc_luajit || true
           haxelib install extension-androidtools 2.2.2 || true
-          
-          # Verificar versión de lime
-          haxelib list | grep lime
-          
           haxelib run lime setup -y || true
-
-      - name: Verify Lime Version
-        run: |
-          echo "=== Verificando versión de lime ==="
-          haxelib run lime version || lime version || echo "Lime no encontrado"
-          echo "=== Fin verificación ==="
 
       - name: Configure Android
         run: |
