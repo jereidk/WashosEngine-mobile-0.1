@@ -98,33 +98,45 @@ jobs:
             echo "Contents of linc_luajit/linc:"
             ls -la "$LINC_LUAJIT_PATH/linc/" 2>/dev/null || echo "linc directory not found"
             
-            # Remove incompatible ARM libraries
+            # Check if linc_luajit is a git submodule or has a 'git' subdirectory
+            echo "Looking for git directory:"
+            ls -la "$LINC_LUAJIT_PATH/git/" 2>/dev/null || echo "git directory not found"
+            
+            # If linc_luajit points to another location via haxelib.json, follow it
+            if [ -f "$LINC_LUAJIT_PATH/haxelib.json" ]; then
+              echo "haxelib.json content:"
+              cat "$LINC_LUAJIT_PATH/haxelib.json"
+            fi
+            
+            # Remove incompatible ARM libraries (try multiple possible paths)
             echo "Removing incompatible libraries..."
-            rm -f "$LINC_LUAJIT_PATH"/lib/lua/lib/Android/libluajit-v7.a
-            rm -f "$LINC_LUAJIT_PATH"/lib/lua/lib/Android/libluajit-x86.a
-            rm -f "$LINC_LUAJIT_PATH"/lib/lua/lib/Android/libluajit-x86_64.a
+            find "$LINC_LUAJIT_PATH" -name "libluajit-v7.a" -type f 2>/dev/null | while read f; do
+              echo "Removing: $f"
+              rm -f "$f"
+            done
+            find "$LINC_LUAJIT_PATH" -name "libluajit-x86.a" -type f 2>/dev/null | while read f; do
+              echo "Removing: $f"
+              rm -f "$f"
+            done
+            find "$LINC_LUAJIT_PATH" -name "libluajit-x86_64.a" -type f 2>/dev/null | while read f; do
+              echo "Removing: $f"
+              rm -f "$f"
+            done
             
             # Patch linc_lua.xml - remove ARMv7, x86, x86_64 lib references
-            LUA_XML="$LINC_LUAJIT_PATH/linc/linc_lua.xml"
-            echo "Looking for linc_lua.xml at: $LUA_XML"
+            # Try to find linc_lua.xml in any subdirectory
+            LUA_XML=$(find "$LINC_LUAJIT_PATH" -name "linc_lua.xml" 2>/dev/null | head -1)
+            echo "Looking for linc_lua.xml anywhere: $LUA_XML"
             
-            if [ -f "$LUA_XML" ]; then
-              echo "Found linc_lua.xml, patching..."
-              # Remove the lines containing the incompatible library references
+            if [ -n "$LUA_XML" ] && [ -f "$LUA_XML" ]; then
+              echo "Found linc_lua.xml at $LUA_XML, patching..."
               sed -i "s|<lib name='\${LINC_LUA_PATH}/lib/lua/lib/Android/libluajit-v7.a' if='HXCPP_ARMV7' />||g" "$LUA_XML"
               sed -i "s|<lib name='\${LINC_LUA_PATH}/lib/lua/lib/Android/libluajit-x86.a' if='HXCPP_X86' />||g" "$LUA_XML"
               sed -i "s|<lib name='\${LINC_LUA_PATH}/lib/lua/lib/Android/libluajit-x86_64.a' if='HXCPP_X86_64' />||g" "$LUA_XML"
               echo "Patched successfully"
-              echo "--- Android section after patch ---"
               grep -A10 'if="android"' "$LUA_XML" || echo "No android section found"
             else
-              echo "ERROR: linc_lua.xml not found at $LUA_XML"
-              # Try alternative paths
-              for path in "$LINC_LUAJIT_PATH"/linc/*.xml "$LINC_LUAJIT_PATH"/*.xml; do
-                if [ -f "$path" ]; then
-                  echo "Found XML at: $path"
-                fi
-              done
+              echo "ERROR: linc_lua.xml not found anywhere"
             fi
           else
             echo "ERROR: linc_luajit not found!"
