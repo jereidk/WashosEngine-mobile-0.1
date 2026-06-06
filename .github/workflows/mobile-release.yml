@@ -70,6 +70,12 @@ jobs:
           haxelib remove hxcpp -f || true
           haxelib install hxcpp 4.3.140 -f || true
           haxelib run hxcpp --version || haxelib list
+          echo "=== Verifying hxcpp version ==="
+          haxelib list | grep hxcpp
+          echo "=== Setting hxcpp as global ==="
+          haxelib global hxcpp 4.3.140 || true
+          echo "=== Checking actual hxcpp path ==="
+          find ~/haxelib -name "hxcpp.h" 2>/dev/null | head -3
 
       - name: Configure Android
         run: |
