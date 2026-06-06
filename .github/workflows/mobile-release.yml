@@ -26,12 +26,8 @@ jobs:
       - name: Install Libraries
         shell: bash
         run: |
-          # Install hmm first
           haxelib git hmm https://github.com/ShadowEngineTeam/hmm --skip-dependencies --quiet
           haxelib run hmm install --quiet
-          
-          # Install grig.audio separately (haxelib registry version)
-          haxelib install grig.audio --quiet
 
       - name: Configure Android
         run: |
@@ -43,7 +39,7 @@ jobs:
       - name: Compile
         shell: bash
         run: |
-          haxelib run lime build android -final -D officialBuild -D ASTC
+          haxelib run lime build android -final -D officialBuild
 
       - name: Upload Artifact
         uses: actions/upload-artifact@main
