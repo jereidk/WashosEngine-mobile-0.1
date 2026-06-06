@@ -36,11 +36,17 @@ jobs:
           
           # Create/update lime haxelib.json with correct version for flixel compatibility
           echo "Creating lime haxelib.json with version 8.3.1..."
-          # Try multiple possible locations for haxelib on different systems
-          for LIME_DIR in "$HOME/.haxelib/lime" "$HOME/.local/share/haxelib/lime" "/usr/local/lib/haxe/lib/lime"; do
-            if [ -d "$(dirname "$LIME_DIR")" ]; then
-              mkdir -p "$LIME_DIR"
-              printf '{\n  "name": "lime",\n  "url": "https://github.com/openfl/lime",\n  "license": "MIT",\n  "tags": [],\n  "description": "A foundational Haxe framework for cross-platform development",\n  "version": "8.3.1",\n  "releasenote": "Various bug fixes",\n  "contributors": ["singmajesty","bowlerhat","Dimensionscape"],\n  "classPath": "src"\n}\n' > "$LIME_DIR/haxelib.json"
+          # Check where lime is installed
+          echo "Checking lime installation..."
+          ls -la ~/.haxelib/ 2>/dev/null || echo "~/.haxelib not found"
+          ls -la ~/.local/share/haxelib/ 2>/dev/null || echo "~/.local/share/haxelib not found"
+          ls -la .haxelib/ 2>/dev/null || echo ".haxelib not found"
+          # Try to find and patch the lime haxelib.json
+          for LIME_DIR in "$HOME/.haxelib/lime" "$HOME/.local/share/haxelib/lime" "/usr/local/lib/haxe/lib/lime" ".haxelib/lime"; do
+            PARENT_DIR="$(dirname "$LIME_DIR")"
+            if [ -d "$PARENT_DIR" ] || mkdir -p "$PARENT_DIR" 2>/dev/null; then
+              mkdir -p "$LIME_DIR" 2>/dev/null
+              printf '{"name":"lime","url":"https://github.com/openfl/lime","license":"MIT","tags":[],"description":"A foundational Haxe framework for cross-platform development","version":"8.3.1","releasenote":"Various bug fixes","contributors":["singmajesty","bowlerhat","Dimensionscape"],"classPath":"src"}\n' > "$LIME_DIR/haxelib.json"
               echo "=== Created $LIME_DIR/haxelib.json ==="
               cat "$LIME_DIR/haxelib.json"
               break
