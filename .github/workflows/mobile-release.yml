@@ -69,19 +69,41 @@ jobs:
           # Force hxcpp 4.3.140 after all dependencies (to override any old version)
           haxelib remove hxcpp -f || true
           haxelib install hxcpp 4.3.140 -f || true
-          haxelib run hxcpp --version || haxelib list
+          
+          # Wait for installation to complete and verify
+          echo "=== Waiting for hxcpp installation to complete ==="
+          for i in {1..30}; do
+            if [ -f ~/haxelib/hxcpp/4,3,140/include/hxcpp.h ]; then
+              echo "hxcpp 4.3.140 installed successfully"
+              break
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 5
+          done
+          
           echo "=== Verifying hxcpp version ==="
           haxelib list | grep hxcpp
           echo "=== Setting hxcpp as global ==="
           haxelib global hxcpp 4.3.140 || true
           echo "=== Checking actual hxcpp path ==="
-          find ~/haxelib -name "hxcpp.h" 2>/dev/null | head -3
+          ls -la ~/haxelib/hxcpp/ 2>/dev/null || echo "No hxcpp dir"
+          find ~/haxelib -name "hxcpp.h" 2>/dev/null | head -5
 
       - name: Configure Android
         run: |
           haxelib run lime config ANDROID_SDK $ANDROID_HOME || true
           haxelib run lime config ANDROID_NDK_ROOT $ANDROID_NDK_LATEST_HOME || true
           haxelib run lime config ANDROID_SETUP true || true
+
+      - name: Fix hxcpp version (force 4.3.140 after lime config)
+        run: |
+          echo "=== Removing old hxcpp and installing 4.3.140 ==="
+          haxelib remove hxcpp -f || true
+          haxelib install hxcpp 4.3.140 -f || true
+          haxelib global hxcpp 4.3.140 || true
+          echo "=== Verifying hxcpp ==="
+          ls ~/haxelib/hxcpp/
+          haxelib list | grep hxcpp
 
       - name: Compile
         run: haxelib run lime build android -ONLY_ARM64 -D ASTC
