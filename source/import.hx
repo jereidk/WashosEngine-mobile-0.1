@@ -9,6 +9,7 @@ import backend.Discord;
 import hxluau.*;
 import hxluau.Types;
 import psychlua.*;
+typedef State = hxluau.Types.Lua_State;
 #end
 
 #if ACHIEVEMENTS_ALLOWED
