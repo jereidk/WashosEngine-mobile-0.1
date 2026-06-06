@@ -26,17 +26,16 @@ jobs:
       - name: Install Libraries
         shell: bash
         run: |
-          # Setup haxelib properly
-          haxelib setup ~/haxelib 2>/dev/null || true
-          haxelib newrepo 2>/dev/null || true
+          # Setup haxelib to use ~/haxelib as the main repo
+          haxelib setup ~/haxelib
           
           # Install hmm first
           haxelib git hmm https://github.com/ShadowEngineTeam/hmm --skip-dependencies --quiet
           haxelib run hmm install --quiet
           
           # Fix hmm bug: grig.audio is installed as grig,audio (comma instead of dot)
-          # Create symlinks to fix the naming
-          cd .haxelib
+          # Create symlinks in the global haxelib repo
+          cd ~/haxelib
           for dir in grig,*; do
             if [ -d "$dir" ]; then
               fixed_name=$(echo "$dir" | sed 's/,/./g')
@@ -46,7 +45,6 @@ jobs:
               fi
             fi
           done
-          cd ..
 
       - name: Configure Android
         run: |
