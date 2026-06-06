@@ -48,8 +48,9 @@
 <assets path="assets/week_assets" rename="assets" exclude="*.mp3" unless="web"/>
 
 <!-- Compressed Texture Assets for Android -->
-<assets path="assets/images-compressed" rename="assets/shared/images" if="android"/>
+<!-- First load base images, then compressed will override if available -->
 <assets path="assets/images-base" rename="assets/shared/images" />
+<assets path="assets/images-compressed" rename="assets/shared/images" if="android"/>
 
 <section if="TITLE_SCREEN_EASTER_EGG">
 <assets path="assets/secrets" rename="assets/shared" exclude="*.mp3" unless="web"/>
