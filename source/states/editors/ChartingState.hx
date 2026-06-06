@@ -1167,6 +1167,7 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 						curZoom = zoomList[Std.int(Math.min(zoomList.indexOf(curZoom) + 1, zoomList.length - 1))];
 	
 					notes.sort(PlayState.sortByTime);
+					if (cachedSectionTimes.length < 2) return; // Safety check
 					var noteSec:Int = 0;
 					var nextSectionTime:Float = cachedSectionTimes[noteSec + 1];
 					var curSectionTime:Float = cachedSectionTimes[noteSec];
@@ -1174,10 +1175,10 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 					{
 						if(note == null) continue;
 			
-						while(cachedSectionTimes[noteSec + 1] <= note.strumTime)
+						while(noteSec + 1 < cachedSectionTimes.length && cachedSectionTimes[noteSec + 1] <= note.strumTime)
 						{
 							noteSec++;
-							nextSectionTime = cachedSectionTimes[noteSec + 1];
+							nextSectionTime = (noteSec + 1 < cachedSectionTimes.length) ? cachedSectionTimes[noteSec + 1] : cachedSectionTimes[noteSec];
 							curSectionTime = cachedSectionTimes[noteSec];
 						}
 						positionNoteYOnTime(note, noteSec);
@@ -1781,7 +1782,7 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 				{
 					if(qPress != ePress)
 					{
-						while(cachedSectionTimes.length > noteSec + 1 && cachedSectionTimes[noteSec + 1] <= note.strumTime)
+						while(noteSec + 1 < cachedSectionTimes.length && cachedSectionTimes[noteSec + 1] <= note.strumTime)
 							noteSec++;
 
 						note.setSustainLength(note.sustainLength + addSus, cachedSectionCrochets[noteSec] / 4, curZoom);
@@ -4843,6 +4844,7 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 			PlayState.SONG.notes[secNum].sectionNotes = [];
 
 		notes.sort(PlayState.sortByTime);
+		if (cachedSectionTimes.length < 2) return;
 		var noteSec:Int = 0;
 		var nextSectionTime:Float = cachedSectionTimes[noteSec + 1];
 		var curSectionTime:Float = cachedSectionTimes[noteSec];
@@ -4851,16 +4853,18 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 		{
 			if(note == null) continue;
 
-			while(cachedSectionTimes[noteSec + 1] <= note.strumTime)
+			while(noteSec + 1 < cachedSectionTimes.length && cachedSectionTimes[noteSec + 1] <= note.strumTime)
 			{
 				noteSec++;
-				nextSectionTime = cachedSectionTimes[noteSec + 1];
+				nextSectionTime = (noteSec + 1 < cachedSectionTimes.length) ? cachedSectionTimes[noteSec + 1] : cachedSectionTimes[noteSec];
 				curSectionTime = cachedSectionTimes[noteSec];
 			}
 
-			var arr:Array<Dynamic> = PlayState.SONG.notes[noteSec].sectionNotes;
-			//trace('Added note with time ${note.songData[0]} at section $noteSec');
-			arr.push(note.songData);
+			if (noteSec < PlayState.SONG.notes.length)
+			{
+				var arr:Array<Dynamic> = PlayState.SONG.notes[noteSec].sectionNotes;
+				arr.push(note.songData);
+			}
 		}
 
 		events.sort(PlayState.sortByTime);
@@ -4956,6 +4960,8 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 		var gridLerp:Float = FlxMath.bound((scrollY + FlxG.height/2 - gridBg.y) / gridBg.height, 0.000001, 0.999999);
 		notes.sort(PlayState.sortByTime);
 		_cacheSections();
+		
+		if (oldTimes == null || oldTimes.length < 2 || cachedSectionTimes.length < 2) return;
 
 		var noteSec:Int = 0;
 		var oldNextSectionTime:Float = oldTimes[noteSec + 1];
@@ -4967,12 +4973,12 @@ class ChartingState extends MusicBeatState implements PsychUIEventHandler.PsychU
 		{
 			if(note == null || note.strumTime <= 0) continue;
 
-			while(noteSec + 2 < oldTimes.length && oldTimes[noteSec + 1] <= note.strumTime)
+			while(noteSec + 1 < oldTimes.length && noteSec + 1 < cachedSectionTimes.length && oldTimes[noteSec + 1] <= note.strumTime)
 			{
 				noteSec++;
-				oldNextSectionTime = oldTimes[noteSec + 1];
+				oldNextSectionTime = (noteSec + 1 < oldTimes.length) ? oldTimes[noteSec + 1] : oldTimes[noteSec];
 				oldCurSectionTime = oldTimes[noteSec];
-				nextSectionTime = cachedSectionTimes[noteSec + 1];
+				nextSectionTime = (noteSec + 1 < cachedSectionTimes.length) ? cachedSectionTimes[noteSec + 1] : cachedSectionTimes[noteSec];
 				curSectionTime = cachedSectionTimes[noteSec];
 
 				if(noteSec + 1 >= cachedSectionTimes.length)

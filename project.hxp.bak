@@ -1,0 +1,21 @@
+{
+	"supportedFormats": ["ASTC", "BC"],
+	"compressionPresets": {
+		"ASTC": "6x6",
+		"BC": "high"
+	},
+	"conversionSettings": {
+		"ASTC": {
+			"blockSize": "6x6",
+			"quality": "medium"
+		},
+		"BC": {
+			"quality": "high"
+		}
+	},
+	"assetFolders": {
+		"ASTC": "assets/images-compressed",
+		"BC": "assets/images-compressed",
+		"PNG": "assets/images-base"
+	}
+}

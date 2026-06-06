@@ -291,17 +291,21 @@ class MusicPlayer extends FlxGroup
 			text = playbackRate + '.00';
 		else
 		{
-			var playbackRate = Std.string(playbackRate);
-			if (playbackRate.split('.')[1].length < 2) // Playback rates for like 1.1, 1.2 etc
-				playbackRate += '0';
+			var playbackRateStr = Std.string(playbackRate);
+			var parts = playbackRateStr.split('.');
+			if (parts.length > 1 && parts[1].length < 2) // Playback rates for like 1.1, 1.2 etc
+				playbackRateStr += '0';
 
-			text = playbackRate;
+			text = playbackRateStr;
 		}
 		playbackTxt.text = text + 'x';
 	}
 
 	function positionSong() 
 	{
+		if (instance == null || instance.songs == null || FreeplayState.curSelected < 0 || FreeplayState.curSelected >= instance.songs.length)
+			return;
+			
 		var length:Int = instance.songs[FreeplayState.curSelected].songName.length;
 		var shortName:Bool = length < 5; // Fix for song names like Ugh, Guns
 		songTxt.x = FlxG.width - songTxt.width - 6;

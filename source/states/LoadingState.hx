@@ -1,7 +1,9 @@
 package states;
 
 import lime.app.Future;
+#if (cpp || java)
 import sys.thread.FixedThreadPool;
+#end
 import haxe.Json;
 import lime.utils.Assets;
 import openfl.display.BitmapData;
@@ -17,11 +19,18 @@ import backend.Song;
 import backend.StageData;
 import objects.Character;
 
+#if (cpp || java)
 import sys.thread.Thread;
 import sys.thread.Mutex;
+#end
 
 import objects.Note;
 import objects.NoteSplash;
+
+#if sys
+import sys.io.File as SysFile;
+import sys.FileSystem;
+#end
 
 #if HSCRIPT_ALLOWED
 import psychlua.HScript;
@@ -37,8 +46,10 @@ class LoadingState extends MusicBeatState
 
 	static var originalBitmapKeys:Map<String, String> = [];
 	static var requestedBitmaps:Map<String, BitmapData> = [];
+	#if (cpp || java)
 	static var mutex:Mutex;
 	static var threadPool:FixedThreadPool = null;
+	#end
 
 	function new(target:FlxState, stopMusic:Bool)
 	{
@@ -330,9 +341,11 @@ class LoadingState extends MusicBeatState
 		isIntrusive = false;
 
 		FlxTransitionableState.skipNextTransIn = true;
+		#if (cpp || java)
 		if (threadPool != null) threadPool.shutdown(); // kill all workers safely
 		threadPool = null;
 		mutex = null;
+		#end
 	}
 
 	public static function checkLoaded():Bool
@@ -368,7 +381,9 @@ class LoadingState extends MusicBeatState
 		#end
 
 		LoadingState.isIntrusive = intrusive;
+		#if (cpp || java)
 		_startPool();
+		#end
 		loadNextDirectory();
 
 		if(intrusive)
@@ -384,7 +399,9 @@ class LoadingState extends MusicBeatState
 				_loaded();
 				break;
 			}
+			#if sys
 			else Sys.sleep(0.001);
+			#end
 		}
 		return target;
 	}
@@ -402,10 +419,12 @@ class LoadingState extends MusicBeatState
 
 	static var initialThreadCompleted:Bool = true;
 	static var dontPreloadDefaultVoices:Bool = false;
+	#if (cpp || java)
 	static function _startPool()
 	{
 		threadPool = new FixedThreadPool(#if MULTITHREADED_LOADING CoolUtil.getCPUThreadsCount() #else 1 #end);
 	}
+	#end
 
 	public static function prepareToSong()
 	{
@@ -422,7 +441,9 @@ class LoadingState extends MusicBeatState
 			return;
 		}
 
+		#if (cpp || java)
 		_startPool();
+		#end
 		imagesToPrepare = [];
 		soundsToPrepare = [];
 		musicToPrepare = [];
@@ -467,8 +488,8 @@ class LoadingState extends MusicBeatState
 
 				#if MODS_ALLOWED
 				var moddyFile:String = Paths.modsJson('$folder/preload');
-				if (FileSystem.exists(moddyFile)) json = Json.parse(File.getContent(moddyFile));
-				else json = Json.parse(File.getContent(path));
+				if (FileSystem.exists(moddyFile)) json = Json.parse(SysFile.getContent(moddyFile));
+				else json = Json.parse(SysFile.getContent(path));
 				#else
 				json = Json.parse(Assets.getText(path));
 				#end
@@ -564,18 +585,28 @@ class LoadingState extends MusicBeatState
 			if (player2 != player1)
 			{
 				threadsMax++;
+				#if (cpp || java)
 				threadPool.run(() -> {
 					try { preloadCharacter(player2, prefixVocals); } catch (e:Dynamic) {}
 					completedThread();
 				});
+				#else
+				try { preloadCharacter(player2, prefixVocals); } catch (e:Dynamic) {}
+				completedThread();
+				#end
 			}
 			if (!stageData.hide_girlfriend && gfVersion != player2 && gfVersion != player1)
 			{
 				threadsMax++;
+				#if (cpp || java)
 				threadPool.run(() -> {
 					try { preloadCharacter(gfVersion); } catch (e:Dynamic) {}
 					completedThread();
 				});
+				#else
+				try { preloadCharacter(gfVersion); } catch (e:Dynamic) {}
+				completedThread();
+				#end
 			}
 
 			if(threadsCompleted == threadsMax)
@@ -647,7 +678,9 @@ class LoadingState extends MusicBeatState
 
 	public static function startThreads()
 	{
+		#if (cpp || java)
 		mutex = new Mutex();
+		#end
 		loadMax = imagesToPrepare.length + soundsToPrepare.length + musicToPrepare.length + songsToPrepare.length;
 		loaded = 0;
 
@@ -657,17 +690,25 @@ class LoadingState extends MusicBeatState
 
 	static function _threadFunc()
 	{
+		#if (cpp || java)
 		_startPool();
 		for (sound in soundsToPrepare) initThread(() -> preloadSound('sounds/$sound'), 'sound $sound');
 		for (music in musicToPrepare) initThread(() -> preloadSound('music/$music'), 'music $music');
 		for (song in songsToPrepare) initThread(() -> preloadSound(song, 'songs', true, false), 'song $song');
-
 		// for images, they get to have their own thread
 		for (image in imagesToPrepare) initThread(() -> preloadGraphic(image), 'image $image');
+		#else
+		for (sound in soundsToPrepare) preloadSound('sounds/$sound');
+		for (music in musicToPrepare) preloadSound('music/$music');
+		for (song in songsToPrepare) preloadSound(song, 'songs', true, false);
+		for (image in imagesToPrepare) preloadGraphic(image);
+		loaded = loadMax;
+		#end
 	}
 
 	static function initThread(func:Void->Dynamic, traceData:String)
 	{
+		#if (cpp || java)
 		// trace('scheduled $func in threadPool');
 		#if debug
 		var threadSchedule = Sys.time();
@@ -693,6 +734,7 @@ class LoadingState extends MusicBeatState
 			loaded++;
 			// mutex.release();
 		});
+		#end
 	}
 
 	inline private static function preloadCharacter(char:String, ?prefixVocals:String)
@@ -701,7 +743,7 @@ class LoadingState extends MusicBeatState
 		{
 			var path:String = Paths.getPath('characters/$char.json', TEXT);
 			#if MODS_ALLOWED
-			var character:Dynamic = Json.parse(File.getContent(path));
+			var character:Dynamic = Json.parse(SysFile.getContent(path));
 			#else
 			var character:Dynamic = Json.parse(Assets.getText(path));
 			#end
@@ -764,9 +806,13 @@ class LoadingState extends MusicBeatState
 			if (#if sys FileSystem.exists(file) || #end OpenFlAssets.exists(file, SOUND))
 			{
 				var sound:Sound = #if sys Sound.fromFile(file) #else OpenFlAssets.getSound(file, false) #end;
+				#if (cpp || java)
 				mutex.acquire();
+				#end
 				Paths.currentTrackedSounds.set(file, sound);
+				#if (cpp || java)
 				mutex.release();
+				#end
 			}
 			else if (beepOnNull)
 			{
@@ -775,9 +821,13 @@ class LoadingState extends MusicBeatState
 				return FlxAssets.getSound('flixel/sounds/beep');
 			}
 		}
+		#if (cpp || java)
 		mutex.acquire();
+		#end
 		Paths.localTrackedAssets.push(file);
+		#if (cpp || java)
 		mutex.release();
+		#end
 
 		return Paths.currentTrackedSounds.get(file);
 	}
@@ -801,10 +851,14 @@ class LoadingState extends MusicBeatState
 					var bitmap:BitmapData = OpenFlAssets.getBitmapData(file, false);
 					#end
 
+					#if (cpp || java)
 					mutex.acquire();
+					#end
 					requestedBitmaps.set(file, bitmap);
 					originalBitmapKeys.set(file, requestKey);
+					#if (cpp || java)
 					mutex.release();
+					#end
 					return bitmap;
 				}
 				else trace('no such image $key exists');

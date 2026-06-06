@@ -4,6 +4,11 @@ import openfl.utils.Assets;
 
 import haxe.Json;
 
+#if sys
+import sys.FileSystem;
+import sys.io.File as SysFile;
+#end
+
 typedef ModsList = {
 	enabled:Array<String>,
 	disabled:Array<String>,
@@ -32,6 +37,11 @@ class Mods
 	];
 
 	private static var globalMods:Array<String> = [];
+	
+	// Cache for mod directories to avoid repeated file system scans
+	static var _modDirsCache:Array<String> = [];
+	static var _modDirsCacheTime:Float = 0;
+	static inline var MODS_CACHE_DURATION:Float = 5000; // 5 seconds
 
 	inline public static function getGlobalMods()
 		return globalMods;
@@ -49,8 +59,13 @@ class Mods
 
 	inline public static function getModDirectories():Array<String>
 	{
-		var list:Array<String> = [];
 		#if MODS_ALLOWED
+		var now:Float = haxe.Timer.stamp();
+		if (_modDirsCache.length > 0 && (now - _modDirsCacheTime) < MODS_CACHE_DURATION) {
+			return _modDirsCache;
+		}
+		
+		var list:Array<String> = [];
 		var modsFolder:String = Paths.mods();
 		if(FileSystem.exists(modsFolder)) {
 			for (folder in Paths.readDirectory(modsFolder))
@@ -60,8 +75,13 @@ class Mods
 					list.push(folder);
 			}
 		}
-		#end
+		
+		_modDirsCache = list;
+		_modDirsCacheTime = now;
 		return list;
+		#else
+		return [];
+		#end
 	}
 	
 	inline public static function mergeAllTextsNamed(path:String, ?defaultDirectory:String = null, allowDuplicates:Bool = false)
@@ -94,6 +114,7 @@ class Mods
 	inline public static function directoriesWithFile(path:String, fileToFind:String, mods:Bool = true)
 	{
 		var foldersToCheck:Array<String> = [];
+		#if sys
 		if(FileSystem.exists(path + fileToFind))
 			foldersToCheck.push(path + fileToFind);
 
@@ -103,6 +124,7 @@ class Mods
 			if(FileSystem.exists(pth))
 				foldersToCheck.push(pth);
 		}
+		#end
 
 		#if MODS_ALLOWED
 		if(mods)

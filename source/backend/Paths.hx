@@ -28,6 +28,37 @@ class Paths
 {
 	inline public static var SOUND_EXT = #if web "mp3" #else "ogg" #end;
 	inline public static var VIDEO_EXT = "mp4";
+	
+	// Compressed texture support for mobile/desktop
+	// Uses platform-specific GPU texture formats when available
+	#if android
+	public static var TEXTURE_COMPRESSION_ENABLED:Bool = true;
+	public static var COMPRESSED_TEXTURE_FORMAT:String = "astc";
+	#elseif windows
+	public static var TEXTURE_COMPRESSION_ENABLED:Bool = false;
+	public static var COMPRESSED_TEXTURE_FORMAT:String = "bc";
+	#else
+	public static var TEXTURE_COMPRESSION_ENABLED:Bool = false;
+	public static var COMPRESSED_TEXTURE_FORMAT:String = "png";
+	#end
+	
+	/**
+	 * Check if compressed textures are enabled for this platform.
+	 */
+	inline static public function isCompressedTexturesEnabled():Bool {
+		#if USING_GPU_TEXTURES
+		return true;
+		#else
+		return false;
+		#end
+	}
+	
+	/**
+	 * Get the current compressed texture format.
+	 */
+	inline static public function getCompressedTextureFormat():String {
+		return COMPRESSED_TEXTURE_FORMAT;
+	}
 
 	public static function excludeAsset(key:String) {
 		if (!dumpExclusions.contains(key))
@@ -240,7 +271,64 @@ class Paths
 			localTrackedAssets.push(key);
 			return currentTrackedAssets.get(key);
 		}
+		
+		// Try loading compressed texture first on supported platforms
+		#if (android && USING_GPU_TEXTURES)
+		bitmap = tryLoadCompressedImage(key, parentFolder);
+		#end
+		
 		return cacheBitmap(key, parentFolder, bitmap, allowGPU);
+	}
+	
+	/**
+	 * Try to load a compressed texture (.astc on Android).
+	 * Checks mod directories first, then base assets.
+	 */
+	static function tryLoadCompressedImage(key:String, ?parentFolder:String):BitmapData
+	{
+		#if (android && USING_GPU_TEXTURES)
+		var compressedKey = key + '.astc';
+		
+		// Try in mod directories first
+		#if MODS_ALLOWED
+		var modPaths = Mods.getModDirectories();
+		for (mod in modPaths)
+		{
+			var modImgPath = 'mods/$mod/images/$compressedKey';
+			if (FileSystem.exists(modImgPath))
+			{
+				try {
+					var tex = BitmapData.fromFile(modImgPath);
+					if (tex != null) {
+						trace('Loaded compressed texture from mod: $modImgPath');
+						return tex;
+					}
+				} catch (e:Dynamic) {
+					// Fall through to next option
+				}
+			}
+		}
+		#end
+		
+		// Try in compressed assets folder
+		var compressedPath = 'assets/images-compressed/$compressedKey';
+		if (FileSystem.exists(compressedPath))
+		{
+			try {
+				var tex = BitmapData.fromFile(compressedPath);
+				if (tex != null) {
+					trace('Loaded compressed texture: $compressedPath');
+					return tex;
+				}
+			} catch (e:Dynamic) {
+				// Fall through to PNG loading
+			}
+		}
+		
+		return null;
+		#else
+		return null;
+		#end
 	}
 
 	public static function cacheBitmap(key:String, ?parentFolder:String = null, ?bitmap:BitmapData, ?allowGPU:Bool = true):FlxGraphic
@@ -426,11 +514,31 @@ class Paths
 		#end
 	}
 
+	static var _songPathCache:Map<String, String> = [];
+	static var _cacheHits:Int = 0;
+	static var _cacheMisses:Int = 0;
+	
 	inline static public function formatToSongPath(path:String) {
+		#if debug
+		if (_songPathCache.exists(path)) {
+			_cacheHits++;
+		} else {
+			_cacheMisses++;
+		}
+		#end
+		
+		var cached = _songPathCache.get(path);
+		if (cached != null) return cached;
+		
 		final invalidChars = ~/[~&;:<>#\s]/g;
 		final hideChars = ~/[.,'"%?!]/g;
-
-		return hideChars.replace(invalidChars.replace(path, '-'), '').trim().toLowerCase();
+		var result = hideChars.replace(invalidChars.replace(path, '-'), '').trim().toLowerCase();
+		
+		// Limit cache size to prevent memory issues
+		if (Lambda.count(_songPathCache) < 10000) {
+			_songPathCache.set(path, result);
+		}
+		return result;
 	}
 
 	public static var currentTrackedSounds:Map<String, Sound> = [];

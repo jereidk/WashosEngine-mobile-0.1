@@ -107,7 +107,7 @@ class PsychCamera extends FlxCamera
 		//trace('lerp on this frame: $mult');
 	}
 
-	override function set_followLerp(value:Float)
+	public function set_followLerp(value:Float)
 	{
 		return followLerp = value;
 	}

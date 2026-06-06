@@ -37,6 +37,8 @@ import shaders.ErrorHandledShader;
 
 import objects.VideoSprite;
 import objects.Note.EventNote;
+import objects.Note;
+import backend.NotePool;
 import objects.*;
 import states.stages.*;
 import states.stages.objects.*;
@@ -88,6 +90,37 @@ class PlayState extends MusicBeatState
 		['Sick!', 1], //From 90% to 99%
 		['Perfect!!', 1] //The value on this one isn't used actually, since Perfect is always "1"
 	];
+	
+	// Binary search cache for rating lookup
+	static var _ratingThresholdCache:Array<Float> = null;
+	static var _ratingNameCache:Array<String> = null;
+	
+	static function getRatingNameBinarySearch(percent:Float):String {
+		// Initialize cache on first use
+		if (_ratingThresholdCache == null) {
+			_ratingThresholdCache = [for (i in 0...ratingStuff.length - 1) cast ratingStuff[i][1]];
+			_ratingNameCache = [for (i in 0...ratingStuff.length - 1) cast ratingStuff[i][0]];
+		}
+		
+		// Binary search for the appropriate rating
+		var low:Int = 0;
+		var high:Int = _ratingThresholdCache.length - 1;
+		
+		while (low <= high) {
+			var mid:Int = Std.int((low + high) / 2);
+			if (_ratingThresholdCache[mid] <= percent) {
+				low = mid + 1;
+			} else {
+				high = mid - 1;
+			}
+		}
+		
+		// high is the index of the rating (or -1 if none found)
+		if (high >= 0 && high < _ratingNameCache.length) {
+			return _ratingNameCache[high];
+		}
+		return 'You Suck!';
+	}
 
 	//event variables
 	private var isCameraOnForcedPos:Bool = false;
@@ -156,6 +189,7 @@ class PlayState extends MusicBeatState
 	public var boyfriend:Character = null;
 
 	public var notes:FlxTypedGroup<Note>;
+	public var notePool:NotePool;
 	public var unspawnNotes:Array<Note> = [];
 	public var eventNotes:Array<EventNote> = [];
 
@@ -1132,7 +1166,11 @@ class PlayState extends MusicBeatState
 
 				//if(!ClientPrefs.data.lowQuality || !cpuControlled) daNote.kill();
 				unspawnNotes.remove(daNote);
-				daNote.destroy();
+				#if FLX_OBJECT_POOL
+					notePool.release(daNote);
+				#else
+					daNote.destroy();
+				#end
 			}
 			--i;
 		}
@@ -1345,6 +1383,12 @@ class PlayState extends MusicBeatState
 		FlxG.sound.list.add(inst);
 
 		notes = new FlxTypedGroup<Note>();
+			#if FLX_OBJECT_POOL
+			notePool = new NotePool(50);
+			trace('[PlayState] NotePool initialized with 50 pre-allocated notes');
+			#else
+			notePool = null;
+			#end
 		noteGroup.add(notes);
 
 		try
@@ -1398,7 +1442,7 @@ class PlayState extends MusicBeatState
 					}
 				}
 
-				var swagNote:Note = new Note(spawnTime, noteColumn, oldNote);
+				var swagNote:Note = #if FLX_OBJECT_POOL notePool.get(spawnTime, noteColumn, oldNote); #else new Note(spawnTime, noteColumn, oldNote); #end
 				var isAlt: Bool = section.altAnim && !gottaHitNote;
 				swagNote.gfNote = (section.gfSection && gottaHitNote == section.mustHitSection);
 				swagNote.animSuffix = isAlt ? "-alt" : "";
@@ -1417,7 +1461,7 @@ class PlayState extends MusicBeatState
 					{
 						oldNote = unspawnNotes[Std.int(unspawnNotes.length - 1)];
 
-						var sustainNote:Note = new Note(spawnTime + (curStepCrochet * susNote), noteColumn, oldNote, true);
+						var sustainNote:Note = #if FLX_OBJECT_POOL notePool.get(spawnTime + (curStepCrochet * susNote), noteColumn, oldNote, true); #else new Note(spawnTime + (curStepCrochet * susNote), noteColumn, oldNote, true); #end
 						sustainNote.animSuffix = swagNote.animSuffix;
 						sustainNote.mustPress = swagNote.mustPress;
 						sustainNote.gfNote = swagNote.gfNote;
@@ -2024,7 +2068,7 @@ class PlayState extends MusicBeatState
 				persistentDraw = false;
 				FlxTimer.globalManager.clear();
 				FlxTween.globalManager.clear();
-				FlxG.camera.setFilters([]);
+				FlxG.camera.filters = [];
 
 				if(GameOverSubstate.deathDelay > 0)
 				{
@@ -3174,7 +3218,11 @@ class PlayState extends MusicBeatState
 	public function invalidateNote(note:Note):Void {
 		//if(!ClientPrefs.data.lowQuality || !cpuControlled) note.kill();
 		notes.remove(note, true);
+		#if FLX_OBJECT_POOL
+		notePool.release(note);
+		#else
 		note.destroy();
+		#end
 	}
 
 	public function spawnNoteSplashOnNote(note:Note) {
@@ -3232,7 +3280,7 @@ class PlayState extends MusicBeatState
 		FlxG.stage.removeEventListener(KeyboardEvent.KEY_DOWN, onKeyPress);
 		FlxG.stage.removeEventListener(KeyboardEvent.KEY_UP, onKeyRelease);
 
-		FlxG.camera.setFilters([]);
+		FlxG.camera.filters = [];
 
 		#if FLX_PITCH FlxG.sound.music.pitch = 1; #end
 		FlxG.animationTimeScale = 1;
@@ -3550,15 +3598,8 @@ class PlayState extends MusicBeatState
 				ratingPercent = Math.min(1, Math.max(0, totalNotesHit / totalPlayed));
 				//trace((totalNotesHit / totalPlayed) + ', Total: ' + totalPlayed + ', notes hit: ' + totalNotesHit);
 
-				// Rating Name
-				ratingName = ratingStuff[ratingStuff.length-1][0]; //Uses last string
-				if(ratingPercent < 1)
-					for (i in 0...ratingStuff.length-1)
-						if(ratingPercent < ratingStuff[i][1])
-						{
-							ratingName = ratingStuff[i][0];
-							break;
-						}
+				// Rating Name - using binary search for O(log n) instead of O(n)
+				ratingName = ratingPercent >= 1 ? 'Perfect!!' : getRatingNameBinarySearch(ratingPercent);
 			}
 			fullComboFunction();
 		}

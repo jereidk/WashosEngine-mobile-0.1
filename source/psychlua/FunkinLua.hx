@@ -4,6 +4,11 @@ package psychlua;
 import backend.WeekData;
 import backend.Highscore;
 import backend.Song;
+import backend.Particle;
+import backend.ParticleEmitter;
+import backend.ScriptHotReload;
+import backend.ReplaySystem;
+import backend.BeatSync;
 
 import openfl.Lib;
 import openfl.utils.Assets;
@@ -11,6 +16,7 @@ import openfl.display.BitmapData;
 import flixel.FlxBasic;
 import flixel.FlxObject;
 import flixel.FlxState;
+import flixel.util.FlxColor;
 
 #if (!flash && sys)
 import flixel.addons.display.FlxRuntimeShader;
@@ -1569,6 +1575,18 @@ class FunkinLua {
 		DeprecatedFunctions.implement(this);
 		MobileFunctions.implement(this);
 		#if android AndroidFunctions.implement(this); #end
+			
+			// Initialize DebugLogger for Android debugging
+			#if LUA_ALLOWED
+			DebugLogger.instance.init();
+			registerDebugFunctions(lua);
+			registerParticleFunctions(lua);
+			registerHotReloadFunctions(lua);
+			registerReplayFunctions(lua);
+			registerBeatSyncFunctions(lua);
+			#end
+			
+			LuaBridge.instance.init(lua);
 
 		for (name => func in customFunctions)
 		{
@@ -1753,6 +1771,586 @@ class FunkinLua {
 			return false;
 		}
 		return (result == 'true');
+	}
+
+	#if LUA_ALLOWED
+	/**
+	 * Register debug functions for Lua scripts
+	 */
+	function registerDebugFunctions(lua:State):Void
+	{
+		// Debug mode control
+		Lua_helper.add_callback(lua, "debugMode", function(enabled:Bool):Void {
+			DebugLogger.instance.setEnabled(enabled);
+		});
+		
+		Lua_helper.add_callback(lua, "isDebugMode", function():Bool {
+			return DebugLogger.instance.enabled;
+		});
+		
+		// Logging functions
+		Lua_helper.add_callback(lua, "debugLog", function(level:String, message:String, ?source:String = null):Void {
+			DebugLogger.instance.log(level, message, source);
+		});
+		
+		Lua_helper.add_callback(lua, "logInfo", function(message:String, ?source:String = null):Void {
+			DebugLogger.instance.info(message, source);
+		});
+		
+		Lua_helper.add_callback(lua, "logWarn", function(message:String, ?source:String = null):Void {
+			DebugLogger.instance.warn(message, source);
+		});
+		
+		Lua_helper.add_callback(lua, "logError", function(message:String, ?source:String = null):Void {
+			DebugLogger.instance.error(message, source);
+		});
+		
+		Lua_helper.add_callback(lua, "logDebug", function(message:String, ?source:String = null):Void {
+			DebugLogger.instance.debug(message, source);
+		});
+		
+		// Log management
+		Lua_helper.add_callback(lua, "clearDebugLog", function():Void {
+			DebugLogger.instance.clear();
+		});
+		
+		Lua_helper.add_callback(lua, "saveDebugLog", function():Bool {
+			return DebugLogger.instance.shouldSaveToFile;
+		});
+		
+		Lua_helper.add_callback(lua, "getDebugLogs", function(?count:Int = -1):Array<Dynamic> {
+			var logs = count > 0 ? DebugLogger.instance.getLastLogs(count) : DebugLogger.instance.getLogs();
+			return [for (log in logs) {
+				level: log.level,
+				message: log.message,
+				source: log.source,
+				color: log.color
+			}];
+		});
+		
+		Lua_helper.add_callback(lua, "getDebugStats", function():Dynamic {
+			return DebugLogger.instance.getStats();
+		});
+		
+		// Log level filtering
+		Lua_helper.add_callback(lua, "setLogLevel", function(level:String, enabled:Bool):Void {
+			DebugLogger.instance.setLogLevel(level, enabled);
+		});
+		
+		// Overlay control
+		Lua_helper.add_callback(lua, "toggleDebugOverlay", function():Bool {
+			return DebugLogger.instance.toggleOverlay();
+		});
+		
+		Lua_helper.add_callback(lua, "showDebugOverlay", function():Void {
+			DebugLogger.instance.setShowOverlay(true);
+		});
+		
+		Lua_helper.add_callback(lua, "hideDebugOverlay", function():Void {
+			DebugLogger.instance.setShowOverlay(false);
+		});
+		
+		// File logging
+		Lua_helper.add_callback(lua, "debugSaveToFile", function(enabled:Bool):Void {
+			DebugLogger.instance.setSaveToFile(enabled);
+		});
+		
+		Lua_helper.add_callback(lua, "saveErrorLog", function(?path:String = null):Bool {
+			return DebugLogger.instance.saveErrorsToFile(path);
+		});
+		
+		// Quick log shortcuts (for convenience)
+		Lua_helper.add_callback(lua, "printr", function(value:Dynamic):String {
+			return DebugLogger.instance.inspect(value);
+		});
+	}
+	#end
+	
+	#if LUA_ALLOWED
+	function registerParticleFunctions(lua:State):Void
+	{
+		// Create particle emitter
+		Lua_helper.add_callback(lua, "createParticleEmitter", function(?x:Float = 0, ?y:Float = 0, ?maxParticles:Int = 200):Int {
+			var emitter = new ParticleEmitter(x, y, maxParticles);
+			emitter.cameras = [PlayState.instance.camHUD]; PlayState.instance.add(emitter); return assignParticleEmitterId(emitter);
+		});
+		
+		// Configure emitter
+		Lua_helper.add_callback(lua, "setEmitterPosition", function(id:Int, x:Float, y:Float):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.setPosition(x, y);
+		});
+		
+		Lua_helper.add_callback(lua, "setEmitterSize", function(id:Int, width:Float, height:Float):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.setSize(width, height);
+		});
+		
+		Lua_helper.add_callback(lua, "setEmitterQuantity", function(id:Int, qty:Int):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.setQuantity(qty);
+		});
+		
+		Lua_helper.add_callback(lua, "setEmitterSpeed", function(id:Int, min:Float, max:Float):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.setSpeed(min, max);
+		});
+		
+		Lua_helper.add_callback(lua, "setEmitterAngle", function(id:Int, min:Float, max:Float):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.setAngle(min, max);
+		});
+		
+		Lua_helper.add_callback(lua, "setEmitterAcceleration", function(id:Int, x:Float, y:Float):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.setAcceleration(x, y);
+		});
+		
+		Lua_helper.add_callback(lua, "setEmitterDrag", function(id:Int, x:Float, y:Float):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.setDrag(x, y);
+		});
+		
+		Lua_helper.add_callback(lua, "setEmitterLifetime", function(id:Int, min:Float, max:Float):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.setLifetime(min, max);
+		});
+		
+		Lua_helper.add_callback(lua, "setEmitterScale", function(id:Int, startMin:Float, startMax:Float, endMin:Float, endMax:Float):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.setScale(startMin, startMax, endMin, endMax);
+		});
+		
+		Lua_helper.add_callback(lua, "setEmitterAlpha", function(id:Int, start:Float, end:Float):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.setAlpha(start, end);
+		});
+		
+		Lua_helper.add_callback(lua, "setEmitterBlend", function(id:Int, blend:String):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.setBlend(blend);
+		});
+		
+		Lua_helper.add_callback(lua, "setEmitterColors", function(id:Int, colors:Array<Int>):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) {
+				var flxColors:Array<FlxColor> = [for (c in colors) FlxColor.fromRGB(c >> 16 & 0xFF, c >> 8 & 0xFF, c & 0xFF)];
+				emitter.setColors(flxColors);
+			}
+		});
+		
+		Lua_helper.add_callback(lua, "setEmitterGraphic", function(id:Int, sprite:String):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.setParticleSprite(sprite);
+		});
+		
+		Lua_helper.add_callback(lua, "setEmitterCircleGraphic", function(id:Int, size:Int, ?color:Int = 0xFFFFFF):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) {
+				emitter.setParticleGraphic(size, FlxColor.fromRGB(color >> 16 & 0xFF, color >> 8 & 0xFF, color & 0xFF));
+			}
+		});
+		
+		// Emit particles
+		Lua_helper.add_callback(lua, "emitParticles", function(id:Int, ?qty:Int = -1):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.emit(qty);
+		});
+		
+		Lua_helper.add_callback(lua, "explodeParticles", function(id:Int, ?qty:Int = -1):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.explode(qty);
+		});
+		
+		Lua_helper.add_callback(lua, "startEmitter", function(id:Int, ?frequency:Float = 0.1):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.start(frequency);
+		});
+		
+		Lua_helper.add_callback(lua, "stopEmitter", function(id:Int):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.stop();
+		});
+		
+		Lua_helper.add_callback(lua, "burstParticles", function(id:Int, count:Int):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.burst(count);
+		});
+		
+		Lua_helper.add_callback(lua, "sprayParticles", function(id:Int, angle:Float, spread:Float = 30, count:Int = 10):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.spray(angle, spread, count);
+		});
+		
+		Lua_helper.add_callback(lua, "killEmitter", function(id:Int):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) emitter.killAll();
+		});
+		
+		Lua_helper.add_callback(lua, "destroyParticleEmitter", function(id:Int):Void {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) {
+				emitter.killAll();
+				particleEmitters.remove(id);
+			}
+		});
+		
+		Lua_helper.add_callback(lua, "getEmitterStats", function(id:Int):Dynamic {
+			var emitter = getParticleEmitter(id);
+			if (emitter != null) return emitter.getStats();
+			return null;
+		});
+		
+		// Quick presets
+		Lua_helper.add_callback(lua, "firework", function(x:Float, y:Float, ?count:Int = 30, ?colors:Array<Int> = null):Int {
+			var emitter = new ParticleEmitter(x, y, 100);
+			emitter.setSpeed(200, 400);
+			emitter.setAngle(0, 360);
+			emitter.setLifetime(0.8, 1.5);
+			emitter.setScale(0.3, 0.5, 0, 0);
+			emitter.setAlpha(1, 0);
+			emitter.setBlend('additive');
+			if (colors != null) {
+				var flxColors:Array<FlxColor> = [for (c in colors) FlxColor.fromRGB(c >> 16 & 0xFF, c >> 8 & 0xFF, c & 0xFF)];
+				emitter.setColors(flxColors);
+			} else {
+				emitter.setColors([FlxColor.RED, FlxColor.YELLOW, FlxColor.ORANGE]);
+			}
+			emitter.setParticleGraphic(8);
+			emitter.explode(count);
+			emitter.cameras = [PlayState.instance.camHUD]; PlayState.instance.add(emitter); return assignParticleEmitterId(emitter);
+		});
+		
+		Lua_helper.add_callback(lua, "smoke", function(x:Float, y:Float, ?count:Int = 5):Int {
+			var emitter = new ParticleEmitter(x, y, 50);
+			emitter.setSpeed(20, 50);
+			emitter.setAngle(250, 290);
+			emitter.setAcceleration(0, -50);
+			emitter.setLifetime(1, 2);
+			emitter.setScale(1, 2, 3, 5);
+			emitter.setAlpha(0.5, 0);
+			emitter.setColors([FlxColor.GRAY, FlxColor.GRAY, FlxColor.fromRGB(100, 100, 100)]);
+			emitter.setParticleGraphic(16);
+			emitter.start(0.1);
+			emitter.cameras = [PlayState.instance.camHUD]; PlayState.instance.add(emitter); return assignParticleEmitterId(emitter);
+		});
+		
+		Lua_helper.add_callback(lua, "sparks", function(x:Float, y:Float, angle:Float, ?count:Int = 10):Int {
+			var emitter = new ParticleEmitter(x, y, 50);
+			emitter.setSpeed(100, 200);
+			emitter.setAngle(angle - 15, angle + 15);
+			emitter.setLifetime(0.3, 0.6);
+			emitter.setScale(0.2, 0.3, 0, 0);
+			emitter.setAlpha(1, 0);
+			emitter.setBlend('additive');
+			emitter.setColors([FlxColor.YELLOW, FlxColor.ORANGE, FlxColor.WHITE]);
+			emitter.setParticleGraphic(4);
+			emitter.explode(count);
+			emitter.cameras = [PlayState.instance.camHUD]; PlayState.instance.add(emitter); return assignParticleEmitterId(emitter);
+		});
+		
+		Lua_helper.add_callback(lua, "confetti", function(?x:Float = -1, ?y:Float = -1, ?count:Int = 50):Int {
+			if (x < 0) x = FlxG.width / 2;
+			if (y < 0) y = 0;
+			var emitter = new ParticleEmitter(x, y, 200);
+			emitter.setSize(100, 0);
+			emitter.setSpeed(50, 150);
+			emitter.setAngle(80, 100);
+			emitter.setAcceleration(0, 100);
+			emitter.setDrag(0.5, 0);
+			emitter.setLifetime(2, 4);
+			emitter.setScale(0.5, 0.8, 0.3, 0.5);
+			emitter.setAlpha(1, 0);
+			emitter.setColors([FlxColor.RED, FlxColor.BLUE, FlxColor.GREEN, FlxColor.YELLOW, FlxColor.PINK, FlxColor.CYAN]);
+			emitter.setParticleGraphic(6);
+			emitter.start(0.05);
+			emitter.cameras = [PlayState.instance.camHUD]; PlayState.instance.add(emitter); return assignParticleEmitterId(emitter);
+		});
+		
+		Lua_helper.add_callback(lua, "stars", function(x:Float, y:Float, ?count:Int = 20):Int {
+			var emitter = new ParticleEmitter(x, y, 100);
+			emitter.setSpeed(10, 30);
+			emitter.setAngle(170, 190);
+			emitter.setLifetime(1, 3);
+			emitter.setScale(0.1, 0.3, 0.1, 0.3);
+			emitter.setAlpha(1, 0.5);
+			emitter.setBlend('additive');
+			emitter.setColors([FlxColor.WHITE, FlxColor.fromRGB(200, 200, 255)]);
+			emitter.setParticleGraphic(3);
+			emitter.explode(count);
+			emitter.cameras = [PlayState.instance.camHUD]; PlayState.instance.add(emitter); return assignParticleEmitterId(emitter);
+		});
+	}
+	
+	var particleEmitters:Map<Int, ParticleEmitter> = new Map();
+	var nextEmitterId:Int = 0;
+	
+	function assignParticleEmitterId(emitter:ParticleEmitter):Int
+	{
+		var id = nextEmitterId++;
+		particleEmitters.set(id, emitter);
+		return id;
+	}
+	
+	function getParticleEmitter(id:Int):ParticleEmitter
+	{
+		return particleEmitters.get(id);
+	}
+	#end
+	
+	// ============================================
+	// HOT RELOAD FUNCTIONS
+	// ============================================
+	
+	function registerHotReloadFunctions(lua:State):Void
+	{
+		// Enable/disable hot reload watching
+		Lua_helper.add_callback(lua, "enableHotReload", function(enabled:Bool):Void {
+			ScriptHotReload.instance.enableWatching(enabled);
+		});
+		
+		// Check if hot reload is enabled
+		Lua_helper.add_callback(lua, "isHotReloadEnabled", function():Bool {
+			return ScriptHotReload.instance.watchingEnabled;
+		});
+		
+		// Force reload all scripts
+		Lua_helper.add_callback(lua, "reloadAllScripts", function():Int {
+			return ScriptHotReload.instance.reloadAllScripts();
+		});
+		
+		// Reload a specific script by path
+		Lua_helper.add_callback(lua, "reloadScript", function(path:String):Bool {
+			return ScriptHotReload.instance.reloadByPath(path);
+		});
+		
+		// Get hot reload stats
+		Lua_helper.add_callback(lua, "getHotReloadStats", function():Dynamic {
+			return ScriptHotReload.instance.getStats();
+		});
+		
+		// Get list of active scripts
+		Lua_helper.add_callback(lua, "getActiveScripts", function():Array<String> {
+			return ScriptHotReload.instance.getActiveScripts();
+		});
+		
+		// Show/hide reload notifications
+		Lua_helper.add_callback(lua, "setHotReloadNotifications", function(enabled:Bool):Void {
+			ScriptHotReload.instance.showNotifications = enabled;
+		});
+	}
+	
+	// ============================================
+	// REPLAY SYSTEM FUNCTIONS
+	// ============================================
+	
+	function registerReplayFunctions(lua:State):Void
+	{
+		// Start recording a replay
+		Lua_helper.add_callback(lua, "startReplayRecording", function(?name:String = 'replay'):Void {
+			ReplaySystem.instance.startRecording(name);
+		});
+		
+		// Stop recording and get data
+		Lua_helper.add_callback(lua, "stopReplayRecording", function():Bool {
+			return ReplaySystem.instance.stopRecording() != null;
+		});
+		
+		// Record a note hit
+		Lua_helper.add_callback(lua, "recordNoteHit", function(time:Float, noteData:Int, rating:String):Void {
+			ReplaySystem.instance.recordNoteHit(time, noteData, rating);
+		});
+		
+		// Record a generic input
+		Lua_helper.add_callback(lua, "recordInput", function(time:Float, key:Int, pressed:Bool):Void {
+			ReplaySystem.instance.recordInput(time, key, pressed);
+		});
+		
+		// Save replay to file
+		Lua_helper.add_callback(lua, "saveReplay", function(?path:String = null):Bool {
+			return ReplaySystem.instance.saveReplay(path);
+		});
+		
+		// Load replay from file
+		Lua_helper.add_callback(lua, "loadReplay", function(path:String):Bool {
+			return ReplaySystem.instance.loadReplay(path);
+		});
+		
+		// Load replay from JSON string
+		Lua_helper.add_callback(lua, "loadReplayFromJson", function(json:String):Bool {
+			return ReplaySystem.instance.loadReplayFromJson(json);
+		});
+		
+		// Start playback
+		Lua_helper.add_callback(lua, "startReplayPlayback", function(?ghostMode:Bool = false):Void {
+			ReplaySystem.instance.startPlayback(ghostMode);
+		});
+		
+		// Pause playback
+		Lua_helper.add_callback(lua, "pauseReplayPlayback", function():Void {
+			ReplaySystem.instance.pausePlayback();
+		});
+		
+		// Resume playback
+		Lua_helper.add_callback(lua, "resumeReplayPlayback", function():Void {
+			ReplaySystem.instance.resumePlayback();
+		});
+		
+		// Stop playback
+		Lua_helper.add_callback(lua, "stopReplayPlayback", function():Void {
+			ReplaySystem.instance.stopPlayback();
+		});
+		
+		// Set playback speed
+		Lua_helper.add_callback(lua, "setReplayPlaybackSpeed", function(speed:Float):Void {
+			ReplaySystem.instance.playbackSpeed = speed;
+		});
+		
+		// Get replay stats
+		Lua_helper.add_callback(lua, "getReplayStats", function():Dynamic {
+			return ReplaySystem.instance.getStats();
+		});
+		
+		// Get replay as JSON
+		Lua_helper.add_callback(lua, "getReplayJson", function():String {
+			return ReplaySystem.instance.getReplayJson();
+		});
+		
+		// Check if has replay loaded
+		Lua_helper.add_callback(lua, "hasReplay", function():Bool {
+			return ReplaySystem.instance.hasReplay();
+		});
+		
+		// List available replays
+		Lua_helper.add_callback(lua, "listReplays", function(?directory:String = 'replays'):Array<String> {
+			return ReplaySystem.listReplays(directory);
+		});
+		
+		// Delete a replay
+		Lua_helper.add_callback(lua, "deleteReplay", function(name:String, ?directory:String = 'replays'):Bool {
+			return ReplaySystem.deleteReplay(name, directory);
+		});
+		
+		// Clear current replay
+		Lua_helper.add_callback(lua, "clearReplay", function():Void {
+			ReplaySystem.instance.clear();
+		});
+	}
+	
+	// ============================================
+	// BEAT SYNC FUNCTIONS
+	// ============================================
+	
+	function registerBeatSyncFunctions(lua:State):Void
+	{
+		// Create beat sync instance
+		Lua_helper.add_callback(lua, "createBeatSync", function(?bpm:Float = 120):Int {
+			var beatSync = new BeatSync(bpm);
+			return assignBeatSyncId(beatSync);
+		});
+		
+		// Set BPM
+		Lua_helper.add_callback(lua, "setBeatSyncBpm", function(id:Int, bpm:Float):Void {
+			var beatSync = getBeatSync(id);
+			if (beatSync != null) beatSync.setBpm(bpm);
+		});
+		
+		// Update beat sync (call each frame)
+		Lua_helper.add_callback(lua, "updateBeatSync", function(id:Int, elapsed:Float):Void {
+			var beatSync = getBeatSync(id);
+			if (beatSync != null) beatSync.update(elapsed);
+		});
+		
+		// Get current beat
+		Lua_helper.add_callback(lua, "getBeatSyncBeat", function(id:Int):Float {
+			var beatSync = getBeatSync(id);
+			if (beatSync != null) return beatSync.getCurrentBeat();
+			return 0;
+		});
+		
+		// Check if on specific beat
+		Lua_helper.add_callback(lua, "isBeatSyncOnBeat", function(id:Int, beat:Int, ?tolerance:Float = 0.1):Bool {
+			var beatSync = getBeatSync(id);
+			if (beatSync != null) return beatSync.isOnBeat(beat, tolerance);
+			return false;
+		});
+		
+		// Check if on strong beat
+		Lua_helper.add_callback(lua, "isBeatSyncOnStrongBeat", function(id:Int):Bool {
+			var beatSync = getBeatSync(id);
+			if (beatSync != null) return beatSync.isOnStrongBeat();
+			return false;
+		});
+		
+		// Check if on downbeat
+		Lua_helper.add_callback(lua, "isBeatSyncOnDownbeat", function(id:Int):Bool {
+			var beatSync = getBeatSync(id);
+			if (beatSync != null) return beatSync.isOnDownbeat();
+			return false;
+		});
+		
+		// Seek to beat
+		Lua_helper.add_callback(lua, "beatSyncSeekTo", function(id:Int, beat:Float):Void {
+			var beatSync = getBeatSync(id);
+			if (beatSync != null) beatSync.seekTo(beat);
+		});
+		
+		// Seek to time
+		Lua_helper.add_callback(lua, "beatSyncSeekToTime", function(id:Int, time:Float):Void {
+			var beatSync = getBeatSync(id);
+			if (beatSync != null) beatSync.seekToTime(time);
+		});
+		
+		// Reset beat sync
+		Lua_helper.add_callback(lua, "resetBeatSync", function(id:Int):Void {
+			var beatSync = getBeatSync(id);
+			if (beatSync != null) beatSync.reset();
+		});
+		
+		// Get crochet (beat duration)
+		Lua_helper.add_callback(lua, "getBeatSyncCrochet", function(id:Int):Float {
+			var beatSync = getBeatSync(id);
+			if (beatSync != null) return beatSync.crochet;
+			return 0.5;
+		});
+		
+		// Get stats
+		Lua_helper.add_callback(lua, "getBeatSyncStats", function(id:Int):Dynamic {
+			var beatSync = getBeatSync(id);
+			if (beatSync != null) {
+				return {
+					bpm: beatSync.bpm,
+					crochet: beatSync.crochet,
+					currentBeat: beatSync.currentBeat,
+					beatCount: beatSync.beatCount,
+					stepCount: beatSync.stepCount,
+					measureCount: beatSync.measureCount
+				};
+			}
+			return null;
+		});
+		
+		// Quick beat-based tween (simple)
+		Lua_helper.add_callback(lua, "beatTween", function(sprite:String, property:String, targetValue:Float, durationBeats:Float, ?interval:Int = 4):Bool {
+			// This requires the sprite to be accessible from PlayState
+			// For now, just trigger a callback that can be handled in Haxe
+			return true;
+		});
+	}
+	
+	var beatSyncInstances:Map<Int, BeatSync> = new Map();
+	var nextBeatSyncId:Int = 0;
+	
+	function assignBeatSyncId(beatSync:BeatSync):Int
+	{
+		var id = nextBeatSyncId++;
+		beatSyncInstances.set(id, beatSync);
+		return id;
+	}
+	
+	function getBeatSync(id:Int):BeatSync
+	{
+		return beatSyncInstances.get(id);
 	}
 
 	function findScript(scriptFile:String, ext:String = '.lua')

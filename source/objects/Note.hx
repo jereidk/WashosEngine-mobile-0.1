@@ -97,6 +97,23 @@ class Note extends FlxSprite
 	public static var swagWidth:Float = 160 * 0.7;
 	public static var colArray:Array<String> = ['purple', 'blue', 'green', 'red'];
 	public static var defaultNoteSkin(default, never):String = 'noteSkins/NOTE_assets';
+	
+	// FlxRect pool for clipRect reuse
+	static var _rectPool:Array<FlxRect> = [];
+	static var _rectPoolIndex:Int = 0;
+	
+	static function getPooledRect():FlxRect {
+		if (_rectPool.length > 0) {
+			return _rectPool.shift();
+		}
+		return new FlxRect();
+	}
+	
+	static function returnRectToPool(rect:FlxRect) {
+		if (rect != null && _rectPool.length < 64) { // Limit pool size
+			_rectPool.push(rect);
+		}
+	}
 
 	public var noteSplashData:NoteSplashData = {
 		disabled: false,
@@ -176,7 +193,7 @@ class Note extends FlxSprite
 		var arr:Array<FlxColor> = ClientPrefs.data.arrowRGB[noteData];
 		if(PlayState.isPixelStage) arr = ClientPrefs.data.arrowRGBPixel[noteData];
 
-		if (arr != null && noteData > -1 && noteData <= arr.length)
+		if (arr != null && noteData >= 0 && noteData < arr.length && arr.length >= 3)
 		{
 			rgbShader.r = arr[0];
 			rgbShader.g = arr[1];
@@ -333,7 +350,7 @@ class Note extends FlxSprite
 			var newRGB:RGBPalette = new RGBPalette();
 			var arr:Array<FlxColor> = (!PlayState.isPixelStage) ? ClientPrefs.data.arrowRGB[noteData] : ClientPrefs.data.arrowRGBPixel[noteData];
 			
-			if (arr != null && noteData > -1 && noteData <= arr.length)
+			if (arr != null && noteData >= 0 && noteData < arr.length && arr.length >= 3)
 			{
 				newRGB.r = arr[0];
 				newRGB.g = arr[1];
@@ -502,6 +519,70 @@ class Note extends FlxSprite
 		super.destroy();
 		_lastValidChecked = '';
 	}
+	
+	/**
+	 * Reset note for pooling - reutiliza el objeto sin destruirlo
+	 */
+	public function resetNote(?strumTime:Float = 0, ?noteData:Int = 0, ?prevNote:Note = null, ?sustainNote:Bool = false):Void
+	{
+		// Reset basic properties
+		this.strumTime = strumTime;
+		this.noteData = noteData;
+		this.prevNote = prevNote;
+		isSustainNote = sustainNote;
+		
+		// Reset position
+		x = (ClientPrefs.data.middleScroll ? PlayState.STRUM_X_MIDDLESCROLL : PlayState.STRUM_X) + 50;
+		y -= 2000;
+		
+		// Apply offset
+		if (noteData > -1) {
+			x += swagWidth * noteData;
+		}
+		x += offsetX;
+		
+		// Reset visual properties
+		alpha = 1;
+		multAlpha = 1;
+		scale.set(1, 1);
+		angle = 0;
+		visible = true;
+		
+		// Reset animation
+		if (!isSustainNote) {
+			animation.play(colArray[noteData % colArray.length] + 'Scroll');
+		} else {
+			if (prevNote != null) {
+				prevNote.animation.play(colArray[prevNote.noteData % colArray.length] + 'hold');
+				prevNote.scale.y *= Conductor.stepCrochet / 100 * 1.05;
+			}
+			animation.play(colArray[noteData % colArray.length] + 'holdend');
+			alpha = 0.6;
+			multAlpha = 0.6;
+		}
+		
+		// Reset velocity
+		velocity.set(0, 0);
+		acceleration.set(0, 0);
+		
+		// Reset state
+		this.moves = false;
+		canBeHit = true;
+		tooLate = false;
+		wasGoodHit = false;
+		ignoreNote = false;
+		
+		
+		// Reset RGB shader if needed
+		if (rgbShader != null) {
+			rgbShader.enabled = true;
+		}
+		
+		// Update next note reference
+		if (prevNote != null) {
+			prevNote.nextNote = this;
+		}
+	}
 
 	public function followStrumNote(myStrum:StrumNote, fakeCrochet:Float, songSpeed:Float = 1)
 	{
@@ -544,7 +625,7 @@ class Note extends FlxSprite
 		if((mustPress || !ignoreNote) && (wasGoodHit || (prevNote.wasGoodHit && !canBeHit)))
 		{
 			var swagRect:FlxRect = clipRect;
-			if(swagRect == null) swagRect = new FlxRect(0, 0, frameWidth, frameHeight);
+			if(swagRect == null) swagRect = getPooledRect();
 
 			if (myStrum.downScroll)
 			{

@@ -4,10 +4,12 @@
 import backend.Discord;
 #end
 
-//Psych
+//Psych - Lua Support (using hxluau)
 #if LUA_ALLOWED
-import llua.*;
-import llua.Lua;
+import hxluau.*;
+import hxluau.Types;
+import hxluau.State;
+import psychlua.*;
 #end
 
 #if ACHIEVEMENTS_ALLOWED
@@ -35,7 +37,6 @@ import android.Settings as AndroidSettings;
 import android.Tools as AndroidTools;
 import android.os.Build.VERSION as AndroidVersion;
 import android.os.Build.VERSION_CODES as AndroidVersionCode;
-import android.os.BatteryManager as AndroidBatteryManager;
 #end
 
 #if sys
@@ -67,9 +68,9 @@ import objects.BGSprite;
 import states.PlayState;
 import states.LoadingState;
 
-#if flxanimate
-import flxanimate.*;
-import flxanimate.PsychFlxAnimate as FlxAnimate;
+#if flixel_animate
+import animate.FlxAnimate;
+import animate.FlxAnimateFrames;
 #end
 
 //Flixel

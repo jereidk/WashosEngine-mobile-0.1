@@ -10,6 +10,12 @@ enum Alignment
 	RIGHT;
 }
 
+typedef Letter = {
+	?anim:Null<String>,
+	?offsets:Array<Float>,
+	?offsetsBold:Array<Float>
+}
+
 class Alphabet extends FlxSpriteGroup
 {
 	public var text(default, set):String;
@@ -200,10 +206,10 @@ class Alphabet extends FlxSpriteGroup
 			var character:String = newText.charAt(i);
 			if(character != '\n')
 			{
-				var spaceChar:Bool = (character == " " || (bold && character == "_"));
+var spaceChar:Bool = (character == " " || (bold && character == "_"));
 				if (spaceChar) consecutiveSpaces++;
 
-				var isAlphabet:Bool = AlphaCharacter.isTypeAlphabet(character.toLowerCase());
+var isAlphabet:Bool = AlphaCharacter.isTypeAlphabet(character.toLowerCase());
 				if (AlphaCharacter.allLetters.exists(character.toLowerCase()) && (!bold || !spaceChar))
 				{
 					if (consecutiveSpaces > 0)
@@ -218,7 +224,7 @@ class Alphabet extends FlxSpriteGroup
 					}
 					consecutiveSpaces = 0;
 
-					var letter:AlphaCharacter = cast recycle(AlphaCharacter, true);
+	var letter:AlphaCharacter = cast recycle(AlphaCharacter, true);
 					letter.scale.x = scaleX;
 					letter.scale.y = scaleY;
 					letter.rowWidth = 0;
@@ -227,7 +233,7 @@ class Alphabet extends FlxSpriteGroup
 					@:privateAccess letter.parent = this;
 
 					letter.row = rows;
-					var off:Float = 0;
+	var off:Float = 0;
 					if(!bold) off = 2;
 					xPos += letter.width + (letter.letterOffset[0] + off) * scale.x;
 					rowData[rows] = xPos;
@@ -252,23 +258,7 @@ class Alphabet extends FlxSpriteGroup
 	}
 }
 
-
 ///////////////////////////////////////////
-// ALPHABET LETTERS, SYMBOLS AND NUMBERS //
-///////////////////////////////////////////
-
-/*enum LetterType
-{
-	ALPHABET;
-	NUMBER_OR_SYMBOL;
-}*/
-
-typedef Letter = {
-	?anim:Null<String>,
-	?offsets:Array<Float>,
-	?offsetsBold:Array<Float>
-}
-
 class AlphaCharacter extends FlxSprite
 {
 	//public static var alphabet:String = "abcdefghijklmnopqrstuvwxyz";
@@ -302,7 +292,7 @@ class AlphaCharacter extends FlxSprite
 			{
 				for (i in 0...data.allowed.length)
 				{
-					var char:String = data.allowed.charAt(i);
+	var char:String = data.allowed.charAt(i);
 					if(char == ' ') continue;
 					
 					allLetters.set(char.toLowerCase(), null); //Allows character to be used in Alphabet
@@ -313,8 +303,8 @@ class AlphaCharacter extends FlxSprite
 			{
 				for (char in Reflect.fields(data.characters))
 				{
-					var letterData = Reflect.field(data.characters, char);
-					var character:String = char.toLowerCase().substr(0, 1);
+	var letterData = Reflect.field(data.characters, char);
+	var character:String = char.toLowerCase().substr(0, 1);
 					if((letterData.animation != null || letterData.normal != null || letterData.bold != null) && allLetters.exists(character))
 						allLetters.set(character, {anim: letterData.animation, offsets: letterData.normal, offsetsBold: letterData.bold});
 				}

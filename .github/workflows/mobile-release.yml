@@ -1,95 +1,81 @@
-name: Mobile + Release
-on: workflow_dispatch
+name: Android Build
 
-permissions:
-  contents: write
-  discussions: write
+on:
+  workflow_dispatch:
 
 env:
+  HAXE_VERSION: 4.3.7
   PROJECT_NAME: WashosEngine
-  REPO_PATH_KEYWORD: WashosEngine-mobile  # más flexible
 
 jobs:
-  get-commit-hash:
-    runs-on: ubuntu-latest
-    outputs:
-      commit_hash: ${{ steps.get_commit_hash.outputs.COMMIT_HASH }}
-    steps:
-      - name: Check Repository
-        run: |
-          echo "GITHUB_REPOSITORY: $GITHUB_REPOSITORY"
-          if [[ "$GITHUB_REPOSITORY" != *"${{ env.REPO_PATH_KEYWORD }}"* ]]; then
-            echo "Repository mismatch. Exiting..."
-            exit 6
-          else
-            echo "Repository valid."
-          fi
-
-      - name: Get latest commit hash
-        id: get_commit_hash
-        run: |
-          commit_hash=${GITHUB_SHA::7}
-          echo "Latest commit hash: $commit_hash"
-          echo "::set-output name=COMMIT_HASH::$commit_hash"
-
   build:
-    name: ${{ matrix.name }}
-    needs: get-commit-hash
-    strategy:
-      matrix:
-        include:
-          - name: Android
-            os: macos-15
-            buildArgs: "android -final -D officialBuild -D HXCPP_PAGESIZE_4K"
-            setupCommand: sh ./setup/mobile.sh
-            artifactName: androidBuild
-            artifactPath: "export/release/android/bin/app/build/outputs/apk/release/*.apk"
-          - name: iOS
-            os: macos-15
-            setupCommand: sh ./setup/mobile.sh
-            buildArgs: "ios -final -nosign -D officialBuild"
-            artifactName: iOSBuild
-            artifactPath: "export/release/ios/build/Release-iphoneos/*.ipa"
-    uses: ./.github/workflows/build.yml
-    with:
-      name: ${{ matrix.name }}
-      os: ${{ matrix.os }}
-      setupCommand: ${{ matrix.setupCommand }}
-      buildArgs: ${{ matrix.buildArgs }}
-      artifactName: ${{ matrix.artifactName }}
-      artifactPath: ${{ matrix.artifactPath }}
+    name: Build (Android)
+    runs-on: macos-26
 
-  Releaser:
-    needs: [get-commit-hash, build]
-    runs-on: ubuntu-latest
-    permissions: write-all
     steps:
-      - name: Download Android Build
-        uses: actions/download-artifact@v4
+      - name: Checkout
+        uses: actions/checkout@main
+        with:
+          submodules: true
+
+      - name: Setup Haxe
+        uses: ShadowEngineTeam/setup-haxe@main
+        with:
+          haxe-version: ${{ env.HAXE_VERSION }}
+
+      - name: Install Libraries
+        shell: bash
+        run: |
+          haxelib git hmm https://github.com/ShadowEngineTeam/hmm --skip-dependencies --quiet
+          # Install ShadowEngine lime first
+          haxelib git lime https://github.com/ShadowEngineTeam/lime 543368c85c496d8b968d8295e528c76a06f8bdf9 --quiet
+          # Install ShadowEngine openfl second (depends on lime)
+          haxelib git openfl https://github.com/ShadowEngineTeam/openfl 5d33fb36dce7a82ed5782a60c0c24640b7f81591 --quiet
+          # Install rest of dependencies via hmm
+          haxelib run hmm install --quiet
+          
+          # Create/update lime haxelib.json with correct version for flixel compatibility
+          echo "Creating lime haxelib.json with version 8.3.1..."
+          # Check where lime is installed
+          echo "Checking lime installation..."
+          ls -la ~/.haxelib/ 2>/dev/null || echo "~/.haxelib not found"
+          ls -la ~/.local/share/haxelib/ 2>/dev/null || echo "~/.local/share/haxelib not found"
+          ls -la .haxelib/ 2>/dev/null || echo ".haxelib not found"
+          # Try to find and patch the lime haxelib.json in all possible locations
+          for LIME_DIR in "$HOME/.haxelib/lime" "$HOME/.local/share/haxelib/lime" "/usr/local/lib/haxe/lib/lime" ".haxelib/lime"; do
+            PARENT_DIR="$(dirname "$LIME_DIR")"
+            if [ -d "$PARENT_DIR" ] || mkdir -p "$PARENT_DIR" 2>/dev/null; then
+              mkdir -p "$LIME_DIR" 2>/dev/null
+              printf '{"name":"lime","url":"https://github.com/openfl/lime","license":"MIT","tags":[],"description":"A foundational Haxe framework for cross-platform development","version":"8.3.1","releasenote":"Various bug fixes","contributors":["singmajesty","bowlerhat","Dimensionscape"],"classPath":"src"}\n' > "$LIME_DIR/haxelib.json"
+              echo "=== Created $LIME_DIR/haxelib.json ==="
+              cat "$LIME_DIR/haxelib.json"
+            fi
+          done
+
+      - name: Configure Android
+        run: |
+          echo "Checking lime version..."
+          haxelib list lime
+          for LIME_DIR in "$HOME/.haxelib/lime" "$HOME/.local/share/haxelib/lime" "/usr/local/lib/haxe/lib/lime"; do
+            if [ -f "$LIME_DIR/haxelib.json" ]; then
+              echo "Found lime haxelib.json at $LIME_DIR"
+              head -5 "$LIME_DIR/haxelib.json"
+              break
+            fi
+          done
+          haxelib run lime config ANDROID_SDK $ANDROID_HOME
+          haxelib run lime config ANDROID_NDK_ROOT $ANDROID_NDK_LATEST_HOME
+          haxelib run lime config JAVA_HOME $JAVA_HOME_21_arm64
+          haxelib run lime config ANDROID_SETUP true
+
+      - name: Compile
+        shell: bash
+        run: |
+          haxelib run lime build android -final -D officialBuild
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@main
         with:
           name: androidBuild
-          path: /home/runner
-
-      - name: Rename Android APK
-        run: |
-          mv /home/runner/*.apk /home/runner/${{ env.PROJECT_NAME }}-Android.apk
-
-      - name: Download iOS Build
-        uses: actions/download-artifact@v4
-        with:
-          name: iOSBuild
-          path: /home/runner
-
-      - name: Rename iOS IPA
-        run: |
-          mv /home/runner/*.ipa /home/runner/${{ env.PROJECT_NAME }}-iOS.ipa
-
-      - name: Publish Release
-        uses: softprops/action-gh-release@v2
-        with:
-          name: "DevBuild ${{ needs.get-commit-hash.outputs.commit_hash }}"
-          tag_name: "devbuild-${{ needs.get-commit-hash.outputs.commit_hash }}"
-          prerelease: true
-          files: |
-            /home/runner/${{ env.PROJECT_NAME }}-Android.apk
-            /home/runner/${{ env.PROJECT_NAME }}-iOS.ipa
+          path: export/release/android/bin/app/build/outputs/apk/release/*.apk
+          if-no-files-found: error
