@@ -289,7 +289,6 @@ class ScriptHotReload
         
         // Intentar cargar el script
         try {
-            newLua.doLuaFile(watched.path);
             
             // Reemplazar en watched
             watched.luaScript = newLua;
