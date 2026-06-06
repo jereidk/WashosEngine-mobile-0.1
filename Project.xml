@@ -61,8 +61,8 @@
 
 <section if="BASE_GAME_FILES">
 <assets path="assets/base_game" rename="assets" exclude="*.mp3" unless="web"/>
-<haxelib name="grig.audio" if="BASE_GAME_FILES"/>
-<haxelib name="funkin.vis" if="BASE_GAME_FILES"/>
+<haxelib name="grig.audio"/>
+<haxelib name="funkin.vis"/>
 </section>
 
 <define name="CHECK_FOR_UPDATES" if="officialBuild"/>
@@ -76,7 +76,7 @@
 <haxelib name="flixel-addons"/>
 <haxelib name="tjson"/>
 
-<haxelib name="linc_luajit" if="LUA_ALLOWED"/>
+<haxelib name="hxluau" if="LUA_ALLOWED"/>
 <haxelib name="hscript-iris" if="HSCRIPT_ALLOWED"/>
 <haxelib name="hxvlc" if="VIDEOS_ALLOWED"/>
 <haxelib name="flxanimate"/>
