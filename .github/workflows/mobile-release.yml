@@ -37,23 +37,7 @@ jobs:
           # Create/update lime haxelib.json with correct version for flixel compatibility
           echo "Creating lime haxelib.json with version 8.3.1..."
           mkdir -p ~/.haxelib/lime
-          cat > ~/.haxelib/lime/haxelib.json << 'LIMEJSON'
-{
-        "name": "lime",
-        "url": "https://github.com/openfl/lime",
-        "license": "MIT",
-        "tags": [],
-        "description": "A foundational Haxe framework for cross-platform development",
-        "version": "8.3.1",
-        "releasenote": "Various bug fixes",
-        "contributors": [
-                "singmajesty",
-                "bowlerhat",
-                "Dimensionscape"
-        ],
-        "classPath": "src"
-}
-LIMEJSON
+          printf '{\n  "name": "lime",\n  "url": "https://github.com/openfl/lime",\n  "license": "MIT",\n  "tags": [],\n  "description": "A foundational Haxe framework for cross-platform development",\n  "version": "8.3.1",\n  "releasenote": "Various bug fixes",\n  "contributors": ["singmajesty","bowlerhat","Dimensionscape"],\n  "classPath": "src"\n}\n' > ~/.haxelib/lime/haxelib.json
           echo "=== Created ~/.haxelib/lime/haxelib.json ==="
           cat ~/.haxelib/lime/haxelib.json
 
