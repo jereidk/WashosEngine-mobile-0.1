@@ -74,14 +74,8 @@ jobs:
       - name: Fix hxcpp version (install 4.3.138 from git)
         run: |
           echo "=== Installing hxcpp 4.3.138 from git ==="
-          cd ~/haxelib
-          rm -rf hxcpp || true
-          git clone --depth 1 --branch v4.3.138 https://github.com/HaxeFoundation/hxcpp.git
-          cd hxcpp
-          git submodule update --init --recursive || true
-          haxelib run hxcpp setup || true
+          haxelib git hxcpp https://github.com/HaxeFoundation/hxcpp.git v4.3.138 || true
           echo "=== Verifying hxcpp ==="
-          ls ~/haxelib/hxcpp/
           haxelib list | grep hxcpp
 
       - name: Compile
