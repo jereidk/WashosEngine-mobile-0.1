@@ -8,8 +8,8 @@ import backend.Discord;
 #if LUA_ALLOWED
 import hxluau.*;
 import hxluau.Types;
+import hxluau.State;
 import psychlua.*;
-using State;
 #end
 
 #if ACHIEVEMENTS_ALLOWED
