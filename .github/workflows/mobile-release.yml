@@ -91,23 +91,7 @@ jobs:
           if [ -n "$LINC_LUAJIT_PATH" ]; then
             echo "Found linc_luajit at: $LINC_LUAJIT_PATH"
             
-            # Remove incompatible ARM libraries (try multiple possible paths)
-            echo "Removing incompatible libraries..."
-            find "$LINC_LUAJIT_PATH" -name "libluajit-v7.a" -type f 2>/dev/null | while read f; do
-              echo "Removing: $f"
-              rm -f "$f"
-            done
-            find "$LINC_LUAJIT_PATH" -name "libluajit-x86.a" -type f 2>/dev/null | while read f; do
-              echo "Removing: $f"
-              rm -f "$f"
-            done
-            find "$LINC_LUAJIT_PATH" -name "libluajit-x86_64.a" -type f 2>/dev/null | while read f; do
-              echo "Removing: $f"
-              rm -f "$f"
-            done
-            
-            # Patch linc_lua.xml - remove ARMv7, x86, x86_64 lib references
-            # Find and save to a variable first
+            # Find linc_lua.xml path
             LUA_XML_PATH=""
             for xml in "$LINC_LUAJIT_PATH"/**/linc_lua.xml "$LINC_LUAJIT_PATH"/*/linc/linc_lua.xml; do
               if [ -f "$xml" ]; then
@@ -120,12 +104,26 @@ jobs:
               echo "ERROR: linc_lua.xml not found"
             else
               echo "Found linc_lua.xml at $LUA_XML_PATH"
-              # Use perl for in-place editing (more reliable than sed -i)
-              perl -i -pe 's|<lib name=\$\{LINC_LUA_PATH\}/lib/lua/lib/Android/libluajit-v7\.a'\'' if=\$\''HXCPP_ARMV7'\'\'' />||g' "$LUA_XML_PATH"
-              perl -i -pe 's|<lib name=\$\{LINC_LUA_PATH\}/lib/lua/lib/Android/libluajit-x86\.a'\'' if=\$\''HXCPP_X86'\'\'' />||g' "$LUA_XML_PATH"
-              perl -i -pe 's|<lib name=\$\{LINC_LUA_PATH\}/lib/lua/lib/Android/libluajit-x86_64\.a'\'' if=\$\''HXCPP_X86_64'\'\'' />||g' "$LUA_XML_PATH"
-              echo "Patched successfully"
-              grep 'if="android"' "$LUA_XML_PATH" || echo "No android section found"
+              echo "Content before patch:"
+              grep -A10 'if="android"' "$LUA_XML_PATH" || echo "No android section found"
+              
+              # Replace entire android section with just ARM64
+              # Use awk for more reliable XML editing
+              awk '
+                /<section if="android">/ { 
+                  print "        <section if=\"android\">"
+                  print "            <lib name=\"${LINC_LUA_PATH}/lib/lua/lib/Android/libluajit-64.a\" if=\"HXCPP_ARM64\" />"
+                  print "        </section>"
+                  skip=1
+                  next
+                }
+                skip && /<\/section>/ { skip=0; next }
+                skip { next }
+                { print }
+              ' "$LUA_XML_PATH" > "$LUA_XML_PATH.tmp" && mv "$LUA_XML_PATH.tmp" "$LUA_XML_PATH"
+              
+              echo "Content after patch:"
+              grep -A10 'if="android"' "$LUA_XML_PATH" || echo "No android section found"
             fi
           else
             echo "ERROR: linc_luajit not found!"
