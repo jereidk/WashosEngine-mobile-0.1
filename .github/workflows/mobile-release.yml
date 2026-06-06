@@ -26,8 +26,18 @@ jobs:
       - name: Install Libraries
         shell: bash
         run: |
+          # Setup local haxelib repo
+          haxelib newrepo 2>/dev/null || true
+          
+          # Install hmm first
           haxelib git hmm https://github.com/ShadowEngineTeam/hmm --skip-dependencies --quiet
           haxelib run hmm install --quiet
+          
+          # Verify grig.audio is installed
+          echo "=== Checking grig.audio ==="
+          haxelib list | grep grig
+          ls -la ~/haxelib/grig* 2>/dev/null || echo "Not in ~/haxelib"
+          find . -name "grig*" -type d 2>/dev/null | head -5
 
       - name: Configure Android
         run: |
@@ -38,7 +48,17 @@ jobs:
 
       - name: Compile
         shell: bash
-        run: haxelib run lime build android -final -D officialBuild -D ASTC
+        run: |
+          # Add local repo to path
+          export HAXELIB_PATH="$(pwd)/.haxelib:$HAXELIB_PATH"
+          echo "=== HAXELIB_PATH ==="
+          echo $HAXELIB_PATH
+          
+          # Debug: list all haxe libs
+          echo "=== Available Libraries ==="
+          haxelib list
+          
+          haxelib run lime build android -final -D officialBuild -D ASTC
 
       - name: Upload Artifact
         uses: actions/upload-artifact@main
