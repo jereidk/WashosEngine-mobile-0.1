@@ -35,6 +35,14 @@ jobs:
         with:
           haxe-version: ${{ env.HAXE_VERSION }}
 
+      - name: Cache Haxelib
+        uses: actions/cache@v4
+        with:
+          path: ~/haxelib
+          key: haxelib-${{ runner.os }}-${{ hashFiles('Project.xml') }}
+          restore-keys: |
+            haxelib-${{ runner.os }}-
+
       - name: Setup Android NDK
         uses: nttld/setup-ndk@main
         with:
@@ -43,11 +51,6 @@ jobs:
       - name: Install Dependencies
         run: |
           haxelib setup ~/haxelib || true
-          haxelib remove lime --quiet 2>/dev/null || true
-          haxelib remove openfl --quiet 2>/dev/null || true
-          haxelib remove hxcpp --quiet 2>/dev/null || true
-          haxelib remove flixel --quiet 2>/dev/null || true
-          haxelib remove flixel-addons --quiet 2>/dev/null || true
           haxelib install lime || true
           haxelib install openfl || true
           haxelib install hxcpp || true
