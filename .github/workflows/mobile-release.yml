@@ -33,6 +33,20 @@ jobs:
           # Install hmm first
           haxelib git hmm https://github.com/ShadowEngineTeam/hmm --skip-dependencies --quiet
           haxelib run hmm install --quiet
+          
+          # Fix hmm bug: grig.audio is installed as grig,audio (comma instead of dot)
+          # Create symlinks to fix the naming
+          cd .haxelib
+          for dir in grig,*; do
+            if [ -d "$dir" ] && [ "$dir" != "grig,*,"*" ]; then
+              fixed_name=$(echo "$dir" | sed 's/,/./g')
+              if [ ! -e "$fixed_name" ]; then
+                ln -s "$dir" "$fixed_name"
+                echo "Created symlink: $fixed_name -> $dir"
+              fi
+            fi
+          done
+          cd ..
 
       - name: Configure Android
         run: |
@@ -44,19 +58,6 @@ jobs:
       - name: Compile
         shell: bash
         run: |
-          # Set HAXELIB_PATH to include both local and global repos
-          export HAXELIB_PATH="$(pwd)/.haxelib:$HOME/haxelib"
-          echo "HAXELIB_PATH=$HAXELIB_PATH"
-          
-          # Verify libraries are found
-          echo "=== Library Paths ==="
-          find ~/haxelib -name "*.hx" -path "*grig*" 2>/dev/null | head -5
-          find .haxelib -name "*.hx" -path "*grig*" 2>/dev/null | head -5
-          
-          # List all haxelibs
-          echo "=== All Libraries ==="
-          haxelib list
-
           haxelib run lime build android -final -D officialBuild -D ASTC
 
       - name: Upload Artifact
