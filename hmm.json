@@ -90,11 +90,6 @@
       "version": "1.5.0"
     },
     {
-      "name": "extension-androidtools",
-      "type": "haxelib",
-      "version": "2.0.0"
-    },
-    {
       "name": "tink_core",
       "type": "haxelib",
       "version": "1.26.0"
