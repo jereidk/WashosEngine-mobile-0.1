@@ -84,20 +84,26 @@ jobs:
 
       - name: Fix linc_luajit for ARM64 only
         run: |
-          # Remove ARMv7 libraries from linc_luajit to avoid linker errors
           LINC_LUAJIT_PATH=$(find ~/haxelib -name "linc_luajit" -type d 2>/dev/null | head -1)
           if [ -n "$LINC_LUAJIT_PATH" ]; then
             echo "Removing ARMv7 libraries from linc_luajit at: $LINC_LUAJIT_PATH"
             rm -f "$LINC_LUAJIT_PATH"/lib/lua/lib/Android/libluajit-v7.a
             rm -f "$LINC_LUAJIT_PATH"/lib/lua/lib/Android/libluajit-x86.a
             rm -f "$LINC_LUAJIT_PATH"/lib/lua/lib/Android/libluajit-x86_64.a
-            echo "Removed incompatible libraries"
+            
+            # Patch linc_lua.xml to not include ARMv7 library
+            LUA_XML="$LINC_LUAJIT_PATH/linc/linc_lua.xml"
+            if [ -f "$LUA_XML" ]; then
+              echo "Patching $LUA_XML to remove ARMv7 references"
+              sed -i 's/<lib name="libluajit-v7.a"\/>//g' "$LUA_XML"
+              sed -i 's/<lib name="libluajit-x86.a"\/>//g' "$LUA_XML"
+              sed -i 's/<lib name="libluajit-x86_64.a"\/>//g' "$LUA_XML"
+              echo "Patched linc_lua.xml"
+            fi
           fi
-          # Force only ARM64 build, no ARMv7
-          export HXCPP_ARMV7=0
 
       - name: Compile
-        run: HXCPP_ARMV7=0 haxelib run lime build android -ONLY_ARM64 -D ASTC -DHXCPP_ARMV7=0
+        run: haxelib run lime build android -ONLY_ARM64 -D ASTC
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
