@@ -75,10 +75,12 @@ jobs:
         run: |
           echo "=== Downloading hxcpp 4.3.138 release ==="
           cd ~/haxelib
-          rm -rf hxcpp || true
+          rm -rf hxcpp hxcpp.zip hxcpp-* 2>/dev/null || true
           curl -sL https://github.com/HaxeFoundation/hxcpp/releases/download/v4.3.138/hxcpp-4.3.138.zip -o hxcpp.zip
           unzip -q hxcpp.zip
-                    echo "=== Verifying hxcpp ==="
+          if [ -d hxcpp-* ]; then
+            mv hxcpp-* hxcpp
+          fi
           ls ~/haxelib/hxcpp/
 
       - name: Compile
