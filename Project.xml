@@ -105,7 +105,7 @@
 
 <haxedef name="message.reporting" value="pretty" />
 
-<certificate path="key.keystore" password="psychengine" alias="psychport" alias-password="psychengine" if="android" unless="debug" />
+<certificate path="keystore/android/key.keystore" password="psychengine" alias="psychport" alias-password="psychengine" if="android" unless="debug" />
 
 <haxeflag name="--macro" value="allowPackage('flash')" />
 <haxeflag name="--macro" value="include('my.pack')" />
