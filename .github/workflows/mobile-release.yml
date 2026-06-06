@@ -39,15 +39,15 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/haxelib
-          key: haxelib-${{ runner.os }}-${{ env.HAXE_VERSION }}-hxcpp4.3.140-${{ hashFiles('Project.xml') }}
+          key: haxelib-${{ runner.os }}-${{ env.HAXE_VERSION }}-hxcpp4.3.2-${{ hashFiles('Project.xml') }}
           restore-keys: |
-            haxelib-${{ runner.os }}-${{ env.HAXE_VERSION }}-hxcpp4.3.140-
+            haxelib-${{ runner.os }}-${{ env.HAXE_VERSION }}-hxcpp4.3.2-
             haxelib-${{ runner.os }}-
 
       - name: Setup Android NDK
         uses: nttld/setup-ndk@main
         with:
-          ndk-version: r27d
+          ndk-version: r21e
 
       - name: Install Dependencies
         run: |
@@ -73,22 +73,22 @@ jobs:
 
       - name: Fix hxcpp version (AFTER lime config)
         run: |
-          echo "=== Removing old hxcpp and installing 4.3.140 ==="
+          echo "=== Removing old hxcpp and installing 4.3.2 ==="
           rm -rf ~/haxelib/hxcpp || true
-          haxelib install hxcpp 4.3.140 -f || true
+          haxelib install hxcpp 4.3.2 -f || true
           
           # Wait for installation to complete
-          echo "=== Waiting for hxcpp 4.3.140 to be fully installed ==="
+          echo "=== Waiting for hxcpp 4.3.2 to be fully installed ==="
           for i in {1..30}; do
-            if [ -d ~/haxelib/hxcpp/4,3,140/include ]; then
-              echo "hxcpp 4.3.140 is ready"
+            if [ -d ~/haxelib/hxcpp/4,3,2/include ]; then
+              echo "hxcpp 4.3.2 is ready"
               break
             fi
             echo "Waiting... ($i/30)"
             sleep 5
           done
           
-          haxelib global hxcpp 4.3.140 || true
+          haxelib global hxcpp 4.3.2 || true
           echo "=== Verifying hxcpp ==="
           ls ~/haxelib/hxcpp/
           haxelib list | grep hxcpp
