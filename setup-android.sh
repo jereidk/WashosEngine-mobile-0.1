@@ -80,29 +80,26 @@ if command -v hmm &> /dev/null; then
 else
     warn "hmm no disponible, instalando dependencias manualmente..."
     
-    # Instalar dependencias básicas
-    haxelib install lime --quiet || true
+    # Instalar dependencias con versiones fijas (compatibles con openfl 9.3.3)
+    haxelib install lime 9.3.0 --quiet || true
     haxelib install openfl 9.3.3 --quiet || true
     haxelib install flixel 5.6.0 --quiet || true
     haxelib install flixel-addons 3.3.2 --quiet || true
-    haxelib install hxcpp --quiet || true
-    haxelib install hxp --quiet || true
+    haxelib install hxcpp 4.3.0 --quiet || true
+    haxelib install hxp 1.3.0 --quiet || true
     haxelib install tjson 1.4.0 --quiet || true
     haxelib install linc_luajit --quiet || true
     haxelib install hscript-iris 1.1.3 --quiet || true
-    haxelib install hxvlc 2.0.1 --quiet || true
+    haxelib install hxvlc 2.0.1 --quiet --skip-dependencies || true
     haxelib install flxanimate --quiet || true
+    haxelib install extension-androidtools 2.2.2 --quiet || true
 fi
 
-# 5. Instalar extension-androidtools desde git
-info "Instalando extension-androidtools..."
-haxelib git extension-androidtools https://github.com/MAJigsaw77/extension-androidtools --quiet --skip-dependencies || true
-
-# 6. Configurar Lime
+# 5. Configurar Lime
 info "Configurando Lime..."
 haxelib run lime setup -y || true
 
-# 7. Verificar Android SDK
+# 6. Verificar Android SDK
 info "Verificando Android SDK..."
 
 if [ -z "$ANDROID_HOME" ]; then

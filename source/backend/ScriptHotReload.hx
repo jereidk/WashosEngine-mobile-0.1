@@ -7,6 +7,15 @@ import haxe.io.Path;
 import sys.FileSystem;
 import sys.io.File;
 
+// Typedef para scripts watched (fuera de la clase)
+typedef WatchedScript = {
+    var path:String;
+    var lastModified:Float;
+    var luaScript:Dynamic;
+    var isHscript:Bool;
+    var onReload:Void->Void;
+}
+
 /**
  * ScriptHotReload - Sistema de Hot Reload para Scripts Lua/HScript
  * 
@@ -74,13 +83,6 @@ class ScriptHotReload
     // TIPOS
     // ============================================
     
-    typedef WatchedScript = {
-        var path:String;
-        var lastModified:Float;
-        var luaScript:Dynamic;
-        var isHscript:Bool;
-        var onReload:Void->Void;
-    }
     
     // ============================================
     // CONSTRUCTOR

@@ -17,6 +17,15 @@ import flixel.math.FlxPoint;
  * - Cyan: Debug
  * - Gris: Trace
  */
+
+typedef LogEntryData = {
+    var timestamp:Float;
+    var level:String;
+    var message:String;
+    var ?source:String;
+    var ?color:Int;
+    }
+
 class DebugOverlay extends FlxTypedGroup<FlxSprite>
 {
     // Singleton
@@ -30,13 +39,6 @@ class DebugOverlay extends FlxTypedGroup<FlxSprite>
     }
     
     // Log entry structure (local copy)
-    typedef LogEntryData = {
-        var timestamp:Float;
-        var level:String;
-        var message:String;
-        var ?source:String;
-        var ?color:Int;
-    }
     
     // Configuration
     public var position:FlxPoint = new FlxPoint(10, 50);
@@ -75,7 +77,7 @@ class DebugOverlay extends FlxTypedGroup<FlxSprite>
         // Log texts
         logTexts = [];
         for (i in 0...maxVisibleLines) {
-            var text = new FlxText(position.x + 5, position.y + 25 + (i * 20), overlayWidth - 10, '');
+        var text = new FlxText(position.x + 5, position.y + 25 + (i * 20), overlayWidth - 10, '');
             text.setFormat(null, 12, FlxColor.WHITE, LEFT);
             text.scrollFactor.set();
             text.alpha = 0;
@@ -145,9 +147,9 @@ class DebugOverlay extends FlxTypedGroup<FlxSprite>
     public function refreshLogs():Void
     {
         logs = [];
-        var allLogs = DebugLogger.instance.getLogs();
+    var allLogs = DebugLogger.instance.getLogs();
         for (log in allLogs) {
-            var entry:LogEntryData = {
+        var entry:LogEntryData = {
                 timestamp: log.timestamp,
                 level: log.level,
                 message: log.message,
@@ -178,7 +180,7 @@ class DebugOverlay extends FlxTypedGroup<FlxSprite>
     // Callback: log added
     private function onLogAdded(entry:Dynamic):Void
     {
-        var logData:LogEntryData = {
+    var logData:LogEntryData = {
             timestamp: entry.timestamp,
             level: entry.level,
             message: entry.message,
@@ -208,21 +210,21 @@ class DebugOverlay extends FlxTypedGroup<FlxSprite>
         }
         
         // Calculate range
-        var startIdx = logs.length - maxVisibleLines - scrollOffset;
-        var endIdx = logs.length - scrollOffset;
+    var startIdx = logs.length - maxVisibleLines - scrollOffset;
+    var endIdx = logs.length - scrollOffset;
         
         if (startIdx < 0) startIdx = 0;
         if (endIdx > logs.length) endIdx = logs.length;
         
         // Show logs
-        var displayIdx = 0;
+    var displayIdx = 0;
         for (i in startIdx...endIdx) {
             if (displayIdx >= maxVisibleLines) break;
             
-            var entry = logs[i];
-            var text = logTexts[displayIdx];
+        var entry = logs[i];
+        var text = logTexts[displayIdx];
             
-            var time = formatTimestamp(entry.timestamp);
+        var time = formatTimestamp(entry.timestamp);
             text.text = '[' + time + '] [' + entry.level.toUpperCase() + '] ' + entry.message;
             text.color = entry.color;
             text.alpha = 1;
@@ -231,17 +233,17 @@ class DebugOverlay extends FlxTypedGroup<FlxSprite>
         }
         
         // Update header
-        var stats = DebugLogger.instance.getStats();
+    var stats = DebugLogger.instance.getStats();
         headerText.text = 'DEBUG LOG (' + stats.total + ' logs, E:' + stats.error + ' W:' + stats.warn + ')';
     }
     
     // Format timestamp
     private function formatTimestamp(time:Float):String
     {
-        var totalSeconds = time;
-        var minutes = Std.int(totalSeconds / 60);
-        var seconds = Std.int(totalSeconds % 60);
-        var ms = Std.int((totalSeconds % 1) * 100);
+    var totalSeconds = time;
+    var minutes = Std.int(totalSeconds / 60);
+    var seconds = Std.int(totalSeconds % 60);
+    var ms = Std.int((totalSeconds % 1) * 100);
         
         return StringTools.lpad(Std.string(minutes), '0', 2) + ':' + 
                StringTools.lpad(Std.string(seconds), '0', 2) + '.' + 

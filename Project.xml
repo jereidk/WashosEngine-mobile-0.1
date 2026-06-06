@@ -11,6 +11,12 @@
 
 <set name="SWF_VERSION" value="11.8" />
 
+<!-- Versión de lime CRÍTICA para compatibilidad con openfl 9.3.3 -->
+<lime version="9.3.0" />
+
+<haxelib name="openfl" />
+<haxelib name="hxcpp" />
+
 <define name="MODS_ALLOWED" if="mobile" />
 <define name="HSCRIPT_ALLOWED" if="mobile" />
 <define name="LUA_ALLOWED" if="cpp" />

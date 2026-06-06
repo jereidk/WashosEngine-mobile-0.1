@@ -1170,7 +1170,7 @@ class PlayState extends MusicBeatState
 					notePool.release(daNote);
 				#else
 					daNote.destroy();
-				#endif
+				#end
 			}
 			--i;
 		}
