@@ -38,7 +38,7 @@ jobs:
           # Create symlinks to fix the naming
           cd .haxelib
           for dir in grig,*; do
-            if [ -d "$dir" ] && [ "$dir" != "grig,*,"*" ]; then
+            if [ -d "$dir" ]; then
               fixed_name=$(echo "$dir" | sed 's/,/./g')
               if [ ! -e "$fixed_name" ]; then
                 ln -s "$dir" "$fixed_name"
