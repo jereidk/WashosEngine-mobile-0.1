@@ -46,7 +46,7 @@ jobs:
       - name: Setup Android NDK
         uses: nttld/setup-ndk@main
         with:
-          ndk-version: 21.4.7075529
+          ndk-version: 25b
 
       - name: Install Dependencies
         run: |
