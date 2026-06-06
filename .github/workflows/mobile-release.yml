@@ -65,6 +65,16 @@ jobs:
           haxelib install extension-androidtools 2.2.2 || true
           haxelib run lime setup -y || true
 
+      - name: Fix linc_luajit for ARM64 only
+        run: |
+          # Remove ARMv7 libraries from linc_luajit to avoid linker errors
+          LINC_LUAJIT_PATH=$(find ~/haxelib -name "linc_luajit" -type d 2>/dev/null | head -1)
+          if [ -n "$LINC_LUAJIT_PATH" ]; then
+            echo "Removing ARMv7 libraries from linc_luajit at: $LINC_LUAJIT_PATH"
+            rm -f "$LINC_LUAJIT_PATH"/lib/lua/lib/Android/libluajit-v7.a
+            echo "Removed libluajit-v7.a"
+          fi
+
       - name: Configure Android
         run: |
           haxelib run lime config ANDROID_SDK $ANDROID_HOME || true
