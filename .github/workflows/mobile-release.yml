@@ -74,8 +74,20 @@ jobs:
       - name: Fix hxcpp version (AFTER lime config)
         run: |
           echo "=== Removing old hxcpp and installing 4.3.140 ==="
-          haxelib remove hxcpp -f || true
+          rm -rf ~/haxelib/hxcpp || true
           haxelib install hxcpp 4.3.140 -f || true
+          
+          # Wait for installation to complete
+          echo "=== Waiting for hxcpp 4.3.140 to be fully installed ==="
+          for i in {1..30}; do
+            if [ -d ~/haxelib/hxcpp/4,3,140/include ]; then
+              echo "hxcpp 4.3.140 is ready"
+              break
+            fi
+            echo "Waiting... ($i/30)"
+            sleep 5
+          done
+          
           haxelib global hxcpp 4.3.140 || true
           echo "=== Verifying hxcpp ==="
           ls ~/haxelib/hxcpp/
