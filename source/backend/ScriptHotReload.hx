@@ -61,7 +61,7 @@ class ScriptHotReload
     private var parentState:FlxState = null;
     
     /** Scripts registrados para watching */
-    private var watchedScripts:Map<String, WatchedScript> = new Map();
+    private var watchedScripts:Map<Int, WatchedScript> = new Map();
     
     /** Timer para checking */
     private var checkTimer:Float = 0;

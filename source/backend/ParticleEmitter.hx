@@ -373,27 +373,27 @@ class ParticleEmitter extends FlxBasic
     private function configureParticle(p:Particle):Void
     {
         // Position (con área)
-        var px = x + FlxG.random.floatInRange(0, width);
-        var py = y + FlxG.random.floatInRange(0, height);
+        var px = x + FlxG.random.float(0, width);
+        var py = y + FlxG.random.float(0, height);
         
         // Velocity
-        var speed = FlxG.random.floatInRange(speedMin, speedMax);
-        var angle = FlxG.random.floatInRange(angleMin, angleMax);
+        var speed = FlxG.random.float(speedMin, speedMax);
+        var angle = FlxG.random.float(angleMin, angleMax);
         var vx = Math.cos(angle * Math.PI / 180) * speed;
         var vy = Math.sin(angle * Math.PI / 180) * speed;
         
         // Scale
-        var scaleStart = FlxG.random.floatInRange(scaleStartMin, scaleStartMax);
-        var scaleEnd = FlxG.random.floatInRange(scaleEndMin, scaleEndMax);
+        var scaleStart = FlxG.random.float(scaleStartMin, scaleStartMax);
+        var scaleEnd = FlxG.random.float(scaleEndMin, scaleEndMax);
         
         // Color
-        var color = colors[FlxG.random.intInRange(0, colors.length - 1)];
+        var color = colors[FlxG.random.int(0, colors.length - 1)];
         
         // Lifetime
-        var lifetime = FlxG.random.floatInRange(lifetimeMin, lifetimeMax);
+        var lifetime = FlxG.random.float(lifetimeMin, lifetimeMax);
         
         // Angular
-        var angularVel = FlxG.random.floatInRange(angularVelocityMin, angularVelocityMax);
+        var angularVel = FlxG.random.float(angularVelocityMin, angularVelocityMax);
         
         // Crear config
         var config:ParticleConfig = {
@@ -484,8 +484,8 @@ class ParticleEmitter extends FlxBasic
         var endAngle = Angle + Spread / 2;
         
         for (i in 0...Count) {
-            var a = FlxG.random.floatInRange(startAngle, endAngle);
-            var speed = FlxG.random.floatInRange(speedMin, speedMax);
+            var a = FlxG.random.float(startAngle, endAngle);
+            var speed = FlxG.random.float(speedMin, speedMax);
             
             var p = pool.getFirstAvailable();
             if (p == null) {
@@ -502,18 +502,18 @@ class ParticleEmitter extends FlxBasic
             var vy = Math.sin(a * Math.PI / 180) * speed;
             
             var config:ParticleConfig = {
-                x: x + FlxG.random.floatInRange(0, width),
-                y: y + FlxG.random.floatInRange(0, height),
+                x: x + FlxG.random.float(0, width),
+                y: y + FlxG.random.float(0, height),
                 vx: vx,
                 vy: vy,
                 ax: accelerationX,
                 ay: accelerationY,
-                lifetime: FlxG.random.floatInRange(lifetimeMin, lifetimeMax),
-                scaleX: FlxG.random.floatInRange(scaleStartMin, scaleStartMax),
-                scaleY: FlxG.random.floatInRange(scaleStartMin, scaleStartMax),
+                lifetime: FlxG.random.float(lifetimeMin, lifetimeMax),
+                scaleX: FlxG.random.float(scaleStartMin, scaleStartMax),
+                scaleY: FlxG.random.float(scaleStartMin, scaleStartMax),
                 alpha: alphaStart,
                 alphaVelocity: (alphaEnd - alphaStart) / lifetimeMax,
-                color: colors[FlxG.random.intInRange(0, colors.length - 1)],
+                color: colors[FlxG.random.int(0, colors.length - 1)],
                 blend: blend
             };
             
