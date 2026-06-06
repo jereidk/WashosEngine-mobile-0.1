@@ -39,10 +39,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/haxelib
-          key: haxelib-${{ runner.os }}-${{ env.HAXE_VERSION }}-hxcpp-git-v4.3.138-${{ hashFiles('Project.xml') }}
+          key: haxelib-${{ runner.os }}-${{ env.HAXE_VERSION }}-fix-v2-${{ hashFiles('hmm.json', 'Project.xml', '.github/workflows/mobile-release.yml') }}
           restore-keys: |
-            haxelib-${{ runner.os }}-${{ env.HAXE_VERSION }}-hxcpp-git-v4.3.138-
-            haxelib-${{ runner.os }}-
+            haxelib-${{ runner.os }}-${{ env.HAXE_VERSION }}-
 
       - name: Setup Android NDK
         uses: nttld/setup-ndk@main
@@ -65,16 +64,6 @@ jobs:
           haxelib install extension-androidtools 2.2.2 || true
           haxelib run lime setup -y || true
 
-      - name: Fix linc_luajit for ARM64 only
-        run: |
-          # Remove ARMv7 libraries from linc_luajit to avoid linker errors
-          LINC_LUAJIT_PATH=$(find ~/haxelib -name "linc_luajit" -type d 2>/dev/null | head -1)
-          if [ -n "$LINC_LUAJIT_PATH" ]; then
-            echo "Removing ARMv7 libraries from linc_luajit at: $LINC_LUAJIT_PATH"
-            rm -f "$LINC_LUAJIT_PATH"/lib/lua/lib/Android/libluajit-v7.a
-            echo "Removed libluajit-v7.a"
-          fi
-
       - name: Configure Android
         run: |
           haxelib run lime config ANDROID_SDK $ANDROID_HOME || true
@@ -92,6 +81,18 @@ jobs:
             mv hxcpp-* hxcpp
           fi
           haxelib dev hxcpp ~/haxelib/hxcpp
+
+      - name: Fix linc_luajit for ARM64 only
+        run: |
+          # Remove ARMv7 libraries from linc_luajit to avoid linker errors
+          LINC_LUAJIT_PATH=$(find ~/haxelib -name "linc_luajit" -type d 2>/dev/null | head -1)
+          if [ -n "$LINC_LUAJIT_PATH" ]; then
+            echo "Removing ARMv7 libraries from linc_luajit at: $LINC_LUAJIT_PATH"
+            rm -f "$LINC_LUAJIT_PATH"/lib/lua/lib/Android/libluajit-v7.a
+            rm -f "$LINC_LUAJIT_PATH"/lib/lua/lib/Android/libluajit-x86.a
+            rm -f "$LINC_LUAJIT_PATH"/lib/lua/lib/Android/libluajit-x86_64.a
+            echo "Removed incompatible libraries"
+          fi
 
       - name: Compile
         run: haxelib run lime build android -ONLY_ARM64 -D ASTC
