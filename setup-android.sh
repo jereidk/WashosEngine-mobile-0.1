@@ -85,7 +85,7 @@ else
     haxelib install openfl 9.3.3 --quiet || true
     haxelib install flixel 5.6.0 --quiet || true
     haxelib install flixel-addons 3.3.2 --quiet || true
-    haxelib install hxcpp 4.3.0 --quiet || true
+    haxelib install hxcpp 4.3.140 --quiet || true
     haxelib install hxp 1.3.0 --quiet || true
     haxelib install tjson 1.4.0 --quiet || true
     haxelib install linc_luajit --quiet || true
