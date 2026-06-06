@@ -282,7 +282,7 @@ class ScriptHotReload
         // Guardar estado importante (si existe el método)
         
         // Crear nuevo script
-        var newLua = new FunkinLua();
+        var newLua = new FunkinLua(watched.path);
         
         // Copiar referencias importantes del viejo
         // (Este paso depende de cómo FunkinLua maneje sus refs)

@@ -571,7 +571,7 @@ class Note extends FlxSprite
 		tooLate = false;
 		wasGoodHit = false;
 		ignoreNote = false;
-		hitCauseMiss = false;
+		
 		
 		// Reset RGB shader if needed
 		if (rgbShader != null) {

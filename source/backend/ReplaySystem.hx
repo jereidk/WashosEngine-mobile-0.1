@@ -544,7 +544,7 @@ class GhostSprite extends FlxSprite
         currentIndex = 0;
     }
     
-    public function reset():Void
+    public function resetReplay():Void
     {
         currentIndex = 0;
         startTime = 0;
