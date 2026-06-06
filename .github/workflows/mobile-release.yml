@@ -29,16 +29,15 @@ jobs:
           haxelib git hmm https://github.com/ShadowEngineTeam/hmm --skip-dependencies --quiet
           # Install ShadowEngine lime first
           haxelib git lime https://github.com/ShadowEngineTeam/lime 543368c85c496d8b968d8295e528c76a06f8bdf9 --quiet
-          # Patch lime version to be compatible with flixel version checks
-          for LIME_PATH in ~/.haxelib/lime/.haxelib ~/.haxelib/lime; do
-            if [ -f "$LIME_PATH/haxelib.json" ]; then
-              echo "Patching $LIME_PATH/haxelib.json"
-              sed -i '' 's/"version": "1"/"version": "8.3.1"/' "$LIME_PATH/haxelib.json"
-              cat "$LIME_PATH/haxelib.json" | head -5
-            fi
-          done
           # Install ShadowEngine openfl second (depends on lime)
           haxelib git openfl https://github.com/ShadowEngineTeam/openfl 5d33fb36dce7a82ed5782a60c0c24640b7f81591 --quiet
+          # Patch ALL lime haxelib.json files to be compatible with flixel version checks
+          echo "Patching lime versions..."
+          find ~/.haxelib -name "haxelib.json" -path "*/lime/*" -exec grep -l '"version": "1"' {} \; 2>/dev/null | while read f; do
+            echo "Patching $f"
+            sed -i '' 's/"version": "1"/"version": "8.3.1"/' "$f"
+            head -5 "$f"
+          done
           # Install rest of dependencies via hmm
           haxelib run hmm install --quiet
 
