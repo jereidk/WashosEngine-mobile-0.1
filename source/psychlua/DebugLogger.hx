@@ -70,7 +70,7 @@ class DebugLogger
     public var showOverlay:Bool = false;
     
     /** Guardar logs a archivo */
-    public var saveToFile:Bool = false;
+    public var shouldSaveToFile:Bool = false;
     
     /** Máximo de logs en memoria */
     public var maxLogs:Int = 100;
@@ -141,8 +141,6 @@ class DebugLogger
         log('info', 'DebugLogger inicializado');
         log('info', 'Log file: $logFilePath');
         
-        // Inicializar interceptor de traces
-        initTraceInterceptor();
     }
     
     /**
@@ -176,8 +174,8 @@ class DebugLogger
      */
     public function setSaveToFile(value:Bool):Void
     {
-        saveToFile = value;
-        log('info', 'Save to file: ${saveToFile ? "ON" : "OFF"}');
+        shouldSaveToFile = value;
+        log('info', 'Save to file: ${shouldSaveToFile ? "ON" : "OFF"}');
     }
     
     /**
@@ -210,7 +208,7 @@ class DebugLogger
         }
         
         // Guardar a archivo si está habilitado
-        if (saveToFile && logFilePath != '') {
+        if (shouldSaveToFile && logFilePath != '') {
             saveToFileInternal(entry);
         }
         

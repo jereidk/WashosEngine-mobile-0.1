@@ -1815,7 +1815,7 @@ class FunkinLua {
 		});
 		
 		Lua_helper.add_callback(lua, "saveDebugLog", function():Bool {
-			return DebugLogger.instance.saveToFile();
+			return DebugLogger.instance.shouldSaveToFile;
 		});
 		
 		Lua_helper.add_callback(lua, "getDebugLogs", function(?count:Int = -1):Array<Dynamic> {

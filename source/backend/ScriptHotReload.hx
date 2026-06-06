@@ -280,12 +280,6 @@ class ScriptHotReload
         if (oldLua == null) return false;
         
         // Guardar estado importante (si existe el método)
-        var scriptState:Dynamic = null;
-        try {
-            if (Reflect.hasField(oldLua, 'getState') && Reflect.isFunction(Reflect.field(oldLua, 'getState'))) {
-                scriptState = oldLua.getState();
-            }
-        } catch (e:Dynamic) {}
         
         // Crear nuevo script
         var newLua = new FunkinLua();
