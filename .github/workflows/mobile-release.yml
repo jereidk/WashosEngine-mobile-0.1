@@ -93,9 +93,11 @@ jobs:
             rm -f "$LINC_LUAJIT_PATH"/lib/lua/lib/Android/libluajit-x86_64.a
             echo "Removed incompatible libraries"
           fi
+          # Force only ARM64 build, no ARMv7
+          export HXCPP_ARMV7=0
 
       - name: Compile
-        run: haxelib run lime build android -ONLY_ARM64 -D ASTC
+        run: HXCPP_ARMV7=0 haxelib run lime build android -ONLY_ARM64 -D ASTC -DHXCPP_ARMV7=0
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
