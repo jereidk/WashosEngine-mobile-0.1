@@ -1,6 +1,31 @@
 name: Build
 
 on:
+  workflow_dispatch:
+    inputs:
+      buildType:
+        required: false
+        type: choice
+        default: "release"
+        options:
+          - debug
+          - release
+        description: "Build type: debug or release"
+      assetType:
+        required: false
+        type: choice
+        default: "ASTC"
+        options:
+          - ASTC
+          - ATC
+          - DXT
+          - ETC1
+        description: "Asset compression type"
+      isOfficial:
+        required: false
+        type: boolean
+        default: false
+        description: "Official build (adds -D officialBuild)"
   workflow_call:
     inputs:
       buildType:
