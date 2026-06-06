@@ -65,9 +65,8 @@
     },
     {
       "name": "grig.audio",
-      "type": "git",
-      "ref": "funkin",
-      "url": "https://github.com/FunkinCrew/grig.audio"
+      "type": "haxelib",
+      "version": "0.0.5"
     },
     {
       "name": "funkin.vis",
