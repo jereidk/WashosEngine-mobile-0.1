@@ -39,9 +39,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ~/haxelib
-          key: haxelib-${{ runner.os }}-${{ env.HAXE_VERSION }}-fix-v2-${{ hashFiles('hmm.json', 'Project.xml', '.github/workflows/mobile-release.yml') }}
+          key: haxelib-disabled-${{ runner.os }}-${{ env.HAXE_VERSION }}-${{ hashFiles('hmm.json', 'Project.xml', '.github/workflows/mobile-release.yml') }}
           restore-keys: |
-            haxelib-${{ runner.os }}-${{ env.HAXE_VERSION }}-
+            haxelib-disabled-${{ runner.os }}-${{ env.HAXE_VERSION }}-
 
       - name: Setup Android NDK
         uses: nttld/setup-ndk@main
