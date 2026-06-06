@@ -1,12 +1,6 @@
 {
   "dependencies": [
     {
-      "name": "hxluau",
-      "type": "git",
-      "ref": "9815e656cd41a585ba1fecfdfd1b931b9e29680f",
-      "url": "https://github.com/ShadowEngineTeam/hxluau"
-    },
-    {
       "name": "lime",
       "type": "git",
       "ref": "543368c85c496d8b968d8295e528c76a06f8bdf9",
@@ -49,6 +43,12 @@
       "url": "https://github.com/MAJigsaw77/hxdiscord_rpc"
     },
     {
+      "name": "hxluau",
+      "type": "git",
+      "ref": "9815e656cd41a585ba1fecfdfd1b931b9e29680f",
+      "url": "https://github.com/ShadowEngineTeam/hxluau"
+    },
+    {
       "name": "hxgamemode",
       "type": "git",
       "ref": "faf17c6522bf85f7be4ce38376a8c41812a3c9bf",
@@ -86,23 +86,14 @@
     },
     {
       "name": "flixel-animate",
-      "type": "haxelib",
-      "version": "1.5.0"
+      "type": "git",
+      "ref": "75870e160677ca4d310df94d775e7fad43c767ae",
+      "url": "https://github.com/MaybeMaru/flixel-animate"
     },
     {
       "name": "tink_core",
       "type": "haxelib",
       "version": "1.26.0"
-    },
-    {
-      "name": "tjson",
-      "type": "haxelib",
-      "version": "1.4.0"
-    },
-    {
-      "name": "hscript-iris",
-      "type": "haxelib",
-      "version": "1.1.3"
     }
   ]
 }
