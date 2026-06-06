@@ -14,9 +14,8 @@
     },
     {
       "name": "openfl",
-      "type": "git",
-      "ref": "5d33fb36dce7a82ed5782a60c0c24640b7f81591",
-      "url": "https://github.com/ShadowEngineTeam/openfl"
+      "type": "haxelib",
+      "version": "9.4.1"
     },
     {
       "name": "flixel",
