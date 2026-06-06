@@ -1575,7 +1575,6 @@ class FunkinLua {
 		DeprecatedFunctions.implement(this);
 		MobileFunctions.implement(this);
 		#if android AndroidFunctions.implement(this); #end
-			LuaUtils.implement(this);
 			ExtendedLuaFunctions.implement(this);
 			
 			// Initialize DebugLogger for Android debugging

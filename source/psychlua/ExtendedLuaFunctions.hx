@@ -3,9 +3,9 @@ package psychlua;
 #if LUA_ALLOWED
 import flixel.FlxSprite;
 import flixel.FlxObject;
-import flixel.FlxText;
+import flixel.text.FlxText;
 import flixel.FlxCamera;
-import flixel.FlxGroup;
+import flixel.group.FlxGroup;
 import flixel.math.FlxPoint;
 import flixel.math.FlxRect;
 import flixel.util.FlxColor;
@@ -326,7 +326,7 @@ class ExtendedLuaFunctions
     
     // === HELPER FUNCTIONS ===
     
-    static function getEaseFunction(easeName:String):FlxEase.EaseFunction
+    static function getEaseFunction(easeName:String):Dynamic
     {
         var ease:Dynamic = Reflect.field(FlxEase, easeName);
         if (ease != null && Reflect.isFunction(ease)) {

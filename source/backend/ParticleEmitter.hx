@@ -396,7 +396,7 @@ class ParticleEmitter extends FlxBasic
         var angularVel = FlxG.random.float(angularVelocityMin, angularVelocityMax);
         
         // Crear config
-        var config:ParticleConfig = {
+        var config:ParticleEmitter.ParticleConfig = {
             x: px,
             y: py,
             vx: vx,
@@ -501,7 +501,7 @@ class ParticleEmitter extends FlxBasic
             var vx = Math.cos(a * Math.PI / 180) * speed;
             var vy = Math.sin(a * Math.PI / 180) * speed;
             
-            var config:ParticleConfig = {
+            var config:ParticleEmitter.ParticleConfig = {
                 x: x + FlxG.random.float(0, width),
                 y: y + FlxG.random.float(0, height),
                 vx: vx,
