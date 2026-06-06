@@ -1362,14 +1362,13 @@ class LuaBridge
             return '[\n$pad  ' + items.join(',\n$pad  ') + '\n$pad]';
         }
         
-        if (Std.is(value, Enum)) {
+        if (Std.is(value, EnumValue)) {
             var enm:EnumValue = cast value;
-            var enumDynamic:Enum<Dynamic> = cast enm;
-            var params = Type.enumParameters(enumDynamic);
+            var params = Type.enumParameters(enm);
             if (params.length == 0) {
-                return Type.getEnumName(enumDynamic) + '.' + Type.enumConstructor(enumDynamic);
+                return Type.getEnumName(enm) + '.' + Type.enumConstructor(enm);
             }
-            return Type.getEnumName(enumDynamic) + '.' + Type.enumConstructor(enumDynamic) + '(' + params.join(', ') + ')';
+            return Type.getEnumName(enm) + '.' + Type.enumConstructor(enm) + '(' + params.join(', ') + ')';
         }
         
         // Object
