@@ -60,7 +60,7 @@
     {
       "name": "flxanimate",
       "type": "git",
-      "ref": "master",
+      "ref": "main",
       "url": "https://github.com/MaybeMaru/flixel-animate"
     },
     {
