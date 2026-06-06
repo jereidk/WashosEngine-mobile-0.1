@@ -227,14 +227,4 @@ class Particle extends FlxSprite
         exists = true;
         active = true;
     }
-    
-    /**
-     * Update blend mode basado en string
-     */
-        super.kill();
-    }
 }
-
-// ============================================
-// CONFIG TYPEDEF
-// ============================================
