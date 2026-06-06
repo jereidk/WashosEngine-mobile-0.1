@@ -7,7 +7,6 @@ import flixel.util.FlxDestroyUtil;
 #if html5
 // For HTML5, we'll create the cursor programmatically
 #else
-import flixel.system.debug.interaction.tools.Pointer.GraphicCursorCross;
 #end
 
 import openfl.net.FileReference;
@@ -119,7 +118,7 @@ class CharacterEditorState extends MusicBeatState implements PsychUIEventHandler
 		cameraFollowPointer = new FlxSprite();
 		cameraFollowPointer.makeGraphic(40, 40, FlxColor.WHITE, true);
 		#else
-		cameraFollowPointer = new FlxSprite().loadGraphic(FlxGraphic.fromClass(GraphicCursorCross));
+		cameraFollowPointer.makeGraphic(40, 40, FlxColor.WHITE, true);
 		cameraFollowPointer.setGraphicSize(40, 40);
 		cameraFollowPointer.updateHitbox();
 		#end

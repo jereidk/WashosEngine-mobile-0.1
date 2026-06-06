@@ -680,10 +680,10 @@ class LuaBridge
         return null;
     }
     
-    private function resolveEnumValue(enm:EnumValue, name:String):Dynamic
+    private function resolveEnumValue(enm:Enum<Dynamic>, name:String):Dynamic
     {
         try {
-            return enm.createByName(name);
+            return Type.createEnum(enm, name);
         } catch (e:Dynamic) {
             return null;
         }
@@ -936,14 +936,14 @@ class LuaBridge
             return null;
         }
         
-    var enm:EnumValue = Type.resolveEnum(enumPath);
+    var enm:Enum<Dynamic> = Type.resolveEnum(enumPath);
         if (enm == null) {
             error('getEnumValue: Enum not found: $enumPath');
             return null;
         }
         
         try {
-            return enm.createByName(valueName);
+            return Type.createEnum(enm, valueName);
         } catch (e:Dynamic) {
             error('getEnumValue: Value not found: $enumPath.$valueName');
             return null;
@@ -1364,11 +1364,12 @@ class LuaBridge
         
         if (Std.is(value, EnumValue)) {
             var enm:EnumValue = cast value;
+            var enumType:Enum<Dynamic> = Type.getEnum(enm);
             var params = Type.enumParameters(enm);
             if (params.length == 0) {
-                return Type.getEnumName(enm) + '.' + Type.enumConstructor(enm);
+                return Type.getEnumName(enumType) + '.' + Type.enumConstructor(enm);
             }
-            return Type.getEnumName(enm) + '.' + Type.enumConstructor(enm) + '(' + params.join(', ') + ')';
+            return Type.getEnumName(enumType) + '.' + Type.enumConstructor(enm) + '(' + params.join(', ') + ')';
         }
         
         // Object
