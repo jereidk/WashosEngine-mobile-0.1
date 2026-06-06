@@ -15,19 +15,19 @@
     {
       "name": "openfl",
       "type": "git",
-      "ref": "main",
+      "ref": "master",
       "url": "https://github.com/ShadowEngineTeam/openfl"
     },
     {
       "name": "flixel",
       "type": "git",
-      "ref": "main",
+      "ref": "master",
       "url": "https://github.com/FunkinCrew/flixel"
     },
     {
       "name": "flixel-addons",
       "type": "git",
-      "ref": "main",
+      "ref": "master",
       "url": "https://github.com/FunkinCrew/flixel-addons"
     },
     {
