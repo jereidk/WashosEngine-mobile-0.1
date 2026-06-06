@@ -611,7 +611,7 @@ class LuaBridge
             current = resolveProperty(current, part);
             
             // Handle enum value access
-            if (current != null && Std.is(current, Enum)) {
+            if (current != null && Std.is(current, EnumValue)) {
                 if (i + 1 < parts.length) {
                     i++;
                     current = resolveEnumValue(cast current, parts[i]);
@@ -680,7 +680,7 @@ class LuaBridge
         return null;
     }
     
-    private function resolveEnumValue(enm:Enum<Dynamic>, name:String):Dynamic
+    private function resolveEnumValue(enm:EnumValue, name:String):Dynamic
     {
         try {
             return enm.createByName(name);
@@ -936,7 +936,7 @@ class LuaBridge
             return null;
         }
         
-    var enm:Enum<Dynamic> = Type.resolveEnum(enumPath);
+    var enm:EnumValue = Type.resolveEnum(enumPath);
         if (enm == null) {
             error('getEnumValue: Enum not found: $enumPath');
             return null;
@@ -955,7 +955,7 @@ class LuaBridge
      */
     public function getEnumParams(enumValue:Dynamic):Array<Dynamic>
     {
-        if (enumValue == null || !Std.is(enumValue, Enum)) return [];
+        if (enumValue == null || !Std.is(enumValue, EnumValue)) return [];
         
         return [for (p in Type.enumParameters(cast enumValue)) coerceToLua(p)];
     }
@@ -965,7 +965,7 @@ class LuaBridge
      */
     public function getEnumName(enumValue:Dynamic):String
     {
-        if (enumValue == null || !Std.is(enumValue, Enum)) return '';
+        if (enumValue == null || !Std.is(enumValue, EnumValue)) return '';
         return Type.enumConstructor(cast enumValue);
     }
     
