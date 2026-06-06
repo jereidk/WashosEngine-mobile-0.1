@@ -79,7 +79,9 @@
 <haxelib name="hxluau" if="LUA_ALLOWED"/>
 <haxelib name="hscript-iris" if="HSCRIPT_ALLOWED"/>
 <haxelib name="hxvlc" if="VIDEOS_ALLOWED"/>
-<haxelib name="flixel-animate" if="cpp"/>
+<haxelib name="flixel-animate" if="cpp">
+	<set name="flixel_animate"/>
+</haxelib>
 
 <haxelib name="hxcpp-debug-server" if="debug"/>
 <haxedef name="HXC_LIBVLC_LOGGING" if="VIDEOS_ALLOWED debug" />
