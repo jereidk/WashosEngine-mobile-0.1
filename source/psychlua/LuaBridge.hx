@@ -1408,9 +1408,6 @@ class LuaBridge
             case TFloat: return value;
             case TBool: return value;
             case tString: return value;
-            case tArray:
-                return [for (i in 0...cast(value, Array<Dynamic>).length) 
-                    coerceToLua(cast(value, Array<Dynamic>)[i])];
             case TClass(c):
             var className = Type.getClassName(c);
                 
